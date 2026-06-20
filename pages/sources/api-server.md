@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
+commit: 4a48ae298461ef9b999a4d44cd105e8ba76d2bf9
 files: [packages/api-server/, packages/api-server-api/, docs/architecture/platform-topology.md]
-updated: 2026-06-19
+updated: 2026-06-20
 ---
 
 # api-server
@@ -10,8 +10,8 @@ updated: 2026-06-19
 The TypeScript backend and the platform's only user-facing surface. It hosts
 the user API, relays all agent traffic, and is the **sole writer of every
 `Agent`/`Fork` `spec`** and of all Postgres state
-(`docs/architecture/platform-topology.md @662ebe4`,
-`docs/architecture/persistence.md @662ebe4`).
+(`docs/architecture/platform-topology.md @4a48ae2`,
+`docs/architecture/persistence.md @4a48ae2`).
 
 ## Two listeners
 
@@ -26,12 +26,12 @@ the user API, relays all agent traffic, and is the **sole writer of every
 
 It proxies **all** ACP to agent pods (clients never dial pods directly), waking
 a hibernated agent before forwarding the first frame
-(`docs/architecture/platform-topology.md @662ebe4`).
+(`docs/architecture/platform-topology.md @4a48ae2`).
 
 ## Module layout (`packages/api-server/src/modules/`)
 
 Domain modules, each its own bounded context
-(`packages/api-server/src/modules/ @662ebe4`):
+(`packages/api-server/src/modules/ @4a48ae2`):
 
 | Module | Responsibility |
 | --- | --- |
@@ -50,7 +50,7 @@ Domain modules, each its own bounded context
 `src/bootstrap/` and `src/apps/` wire the two listeners, and `src/proto-gen/`
 holds generated gRPC types for the ext_authz Check. The wire contracts (tRPC
 routers, CRD types, harness router) live in the sibling `api-server-api`
-package (`packages/api-server-api/src/ @662ebe4`).
+package (`packages/api-server-api/src/ @4a48ae2`).
 
 ## See also
 

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
+commit: 4a48ae298461ef9b999a4d44cd105e8ba76d2bf9
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-19
+updated: 2026-06-20
 ---
 
 # dam — DAM agent platform (source overview)
@@ -11,15 +11,15 @@ updated: 2026-06-19
 agent executes continuously in an isolated container, keeps running after you
 disconnect, and routes every credentialed network call through a
 policy-enforced gateway so the agent process never holds upstream credentials
-(`README.md:9-31 @662ebe4`). Users reach their agents from a **Web UI**, the
+(`README.md:9-31 @4a48ae2`). Users reach their agents from a **Web UI**, the
 **`dam` CLI**, **Slack/Telegram channels**, and **schedules**, and any runtime
 that speaks [ACP](../concepts/agent-client-protocol.md) can run as a harness —
-Claude Code, Pi Agent, Bob, and Codex ship in-repo (`README.md:33-53 @662ebe4`).
+Claude Code, Pi Agent, Bob, and Codex ship in-repo (`README.md:33-53 @4a48ae2`).
 
 ## Repository shape
 
 A pnpm + mise monorepo of mostly TypeScript with a Go control plane
-(`package.json @662ebe4`, `pnpm-workspace.yaml @662ebe4`). Roughly 1,280 tracked
+(`package.json @4a48ae2`, `pnpm-workspace.yaml @4a48ae2`). Roughly 1,280 tracked
 files: ~700 `.ts`, ~120 `.tsx`, ~56 `.go`, plus Helm YAML, ADRs, and docs.
 
 | Top-level | What lives there |
@@ -33,7 +33,7 @@ files: ~700 `.ts`, ~120 `.tsx`, ~56 `.go`, plus Helm YAML, ADRs, and docs.
 ## Module map (`packages/`)
 
 The platform is four long-lived subsystems plus their shared API contracts and
-supporting packages (`docs/architecture/platform-topology.md @662ebe4`):
+supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
 
 - [api-server](api-server.md) — the TypeScript backend: user-facing tRPC + REST,
   the ACP relay, channels, schedules, approvals, skills, connections, usage.
@@ -71,7 +71,7 @@ supporting packages (`docs/architecture/platform-topology.md @662ebe4`):
 
 ## Domain glossary
 
-`docs/ubiquitous-language.md @662ebe4` is the authoritative glossary, organized
+`docs/ubiquitous-language.md @4a48ae2` is the authoritative glossary, organized
 by bounded context (Agents, Channels, Forks, Skills, Approvals, Egress Rules,
 Connections, Secrets, Terms, Usage Tracking, CLI). Read it before reasoning
 about any domain term — the same word (e.g. *Skill Source*) deliberately means
