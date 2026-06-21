@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 4a48ae298461ef9b999a4d44cd105e8ba76d2bf9
+commit: 015835733a44e0bbab24d2a2550f051b5cd5d5a3
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-20
+updated: 2026-06-21
 ---
 
 # dam — DAM agent platform (source overview)
@@ -19,7 +19,7 @@ Claude Code, Pi Agent, Bob, and Codex ship in-repo (`README.md:33-53 @4a48ae2`).
 ## Repository shape
 
 A pnpm + mise monorepo of mostly TypeScript with a Go control plane
-(`package.json @4a48ae2`, `pnpm-workspace.yaml @4a48ae2`). Roughly 1,280 tracked
+(`package.json @0158357`, `pnpm-workspace.yaml @0158357`). Roughly 1,280 tracked
 files: ~700 `.ts`, ~120 `.tsx`, ~56 `.go`, plus Helm YAML, ADRs, and docs.
 
 | Top-level | What lives there |

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
-files: [docs/architecture/security-and-credentials.md, packages/keycloak-theme/]
-updated: 2026-06-19
+commit: 015835733a44e0bbab24d2a2550f051b5cd5d5a3
+files: [docs/architecture/security-and-credentials.md, packages/keycloak-theme/, packages/keycloak-theme/package.json, package.json]
+updated: 2026-06-21
 ---
 
 # Keycloak
@@ -40,7 +40,13 @@ recorded to Postgres but request bodies are not
 ## Theme
 
 The login/account UI theme is the `keycloak-theme` package
-(`packages/keycloak-theme/ @662ebe4`).
+(`packages/keycloak-theme/ @662ebe4`). It is a React + Vite app built into a
+Keycloak theme with **keycloakify** — `build-keycloak-theme` runs
+`vite build && keycloakify build`
+(`packages/keycloak-theme/package.json:7 @0158357`). The root workspace declares
+keycloakify's React peer dependencies as a pnpm `packageExtension` so a
+from-scratch install resolves them and the theme type-checks
+(`package.json:18-33 @0158357`).
 
 ## See also
 
