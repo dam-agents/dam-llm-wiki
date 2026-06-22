@@ -13,3 +13,8 @@ Entry format:
 ## [2026-06-21] lint | clean sweep at @0158357 — verified staleness across all 22 pages (no drift beyond ingest's dam.md/keycloak.md refresh), 0 orphans, 0 broken links, no contradictions. No coverage gaps surfaced.
 ## [2026-06-22] ingest | dam-agents/dam @9d1bc99 — delta from 0158357 (1 commit: feat(helm) custom annotations on chart workloads, #1378). Change is confined to deploy/helm/platform/ (new commonAnnotations/commonPodAnnotations + per-component annotations/podAnnotations knobs); no page's files: cover those paths and no load-bearing claim is affected, so no page edits. Watermark bumped. Coverage note for lint: the Helm chart has only module-map-level coverage in dam.md — no dedicated deployment page.
 ## [2026-06-22] lint | clean sweep at @9d1bc99 — verified staleness across all 22 pages (the only post-0158357 change, deploy/helm annotations #1378, intersects no page's files:), 0 orphans, 0 broken links, no contradictions. Coverage gap reaffirmed: the Helm chart (deploy/helm/platform/) has only module-map-level coverage in dam.md — a dedicated deployment page remains a candidate for a future pass.
+
+## [2026-06-22] query | E2E testing in DAM
+- Miss: wiki only mentioned `e2e` in one line of sources/dam.md. Read packages/e2e from dam-agents/dam @9d1bc99.
+- Added pages/concepts/e2e-testing.md (Playwright serial-pipeline specs, mock agent + gated e2e tRPC control API, mise run e2e/e2e:loop/e2e:reset, injection + api-key specs).
+- index.md: added the concept line. No contradictions found.

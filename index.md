@@ -37,3 +37,4 @@ for running agent harnesses headless in the cloud.
 - [ACP (Agent Client Protocol)](pages/concepts/agent-client-protocol.md) — the JSON-RPC relay contract for live agent I/O.
 - [HITL approvals & egress rules](pages/concepts/hitl-approvals.md) — the human-in-the-loop gate on egress and tool calls.
 - [Connections & contributions](pages/concepts/connections-and-contributions.md) — the runtime channel, outbox, and apply state machine.
+- [E2E testing](pages/concepts/e2e-testing.md) — Playwright specs driving a real k3s cluster with a scriptable mock agent.
