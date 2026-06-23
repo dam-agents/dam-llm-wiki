@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 4a48ae298461ef9b999a4d44cd105e8ba76d2bf9
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
 files: [packages/cli/src/, docs/architecture/cli.md, docs/ubiquitous-language.md]
-updated: 2026-06-20
+updated: 2026-06-23
 ---
 
 # cli (`dam`)
@@ -31,10 +31,43 @@ for agent resolution and auth, and the same binary terminal-frame protocol for
 
 ## Verb groups (`packages/cli/src/modules/`)
 
-`agent`, `auth`, `chat`, `approval`, `connection`, `egress`, `file`, `import`,
-`schedule`, `skill`, `ssh`, `template`, plus `cli`/`shared`
-(`packages/cli/src/modules/ @4a48ae2`). Entrypoint `src/bin.ts`,
-composition in `src/compose.ts`.
+`agent`, `auth`, `channel`, `chat`, `approval`, `connection`, `egress`, `file`,
+`import`, `schedule`, `skill`, `ssh`, `template`, plus `cli`/`shared`. Entrypoint
+`src/bin.ts`; each group is composed and added to the commander program in
+`src/compose.ts` (`packages/cli/src/compose.ts:142-155 @380cb06`).
+
+### `channel` — messenger channel bindings
+
+`dam channel` manages an Agent's Slack/Telegram bindings
+(`packages/cli/src/modules/channel/compose.ts:53 @380cb06`): `channel available`
+lists the providers the operator enabled host-wide, `channel list <agent>` shows
+an agent's connected channels, `channel slack connect|disconnect` and `channel
+telegram connect|disconnect` bind/unbind a channel
+(`channel/compose.ts:71,78 @380cb06`), and `channel allow|disallow` edit the
+agent's `allowedUserEmails` allow-list that gates who may drive it
+(`channel/compose.ts:92-93 @380cb06`). Connect verbs run a **client-side
+precheck** that refuses early if the provider isn't enabled, rather than
+round-tripping a server `PRECONDITION_FAILED`
+(`packages/cli/src/modules/channel/commands/precheck.ts:21-34 @380cb06`).
+
+### Setup-time connection config inputs
+
+`dam connection connect` accepts repeatable `-c, --config key=value` flags to
+set a template's optional config inputs (e.g. `--config model=premium-shell`),
+validated against each input's `enumValues`/`pattern`; a blank value clears the
+input and unknown keys error
+(`packages/cli/src/modules/connection/domain/config-inputs.ts:39-62 @380cb06`).
+
+### Plainer server-rejection reporting
+
+When the server rejects a command, the CLI now prints the server's actual reason
+instead of the misleading "cannot reach server": a `TransportError` carrying a
+`serverCode` (set when the server returned a tRPC error code) prints the plain
+reason, and only a genuine connectivity failure gets the old text
+(`packages/cli/src/modules/shared/trpc/print.ts:20-24 @380cb06`,
+`shared/trpc/classify.ts:22-25 @380cb06`). Auth rejections route through a
+tailored hint — `DAM_TOKEN was rejected…` vs. `run \`dam auth login\` first`
+(`packages/cli/src/modules/shared/auth-message.ts:5-13 @380cb06`).
 
 ## See also
 

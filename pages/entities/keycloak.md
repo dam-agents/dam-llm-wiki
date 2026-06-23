@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 015835733a44e0bbab24d2a2550f051b5cd5d5a3
-files: [docs/architecture/security-and-credentials.md, packages/keycloak-theme/, packages/keycloak-theme/package.json, package.json]
-updated: 2026-06-21
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+files: [docs/architecture/security-and-credentials.md, packages/keycloak-theme/, packages/keycloak-theme/package.json, packages/keycloak-theme/tsconfig.json, package.json]
+updated: 2026-06-23
 ---
 
 # Keycloak
@@ -46,7 +46,10 @@ Keycloak theme with **keycloakify** — `build-keycloak-theme` runs
 (`packages/keycloak-theme/package.json:7 @0158357`). The root workspace declares
 keycloakify's React peer dependencies as a pnpm `packageExtension` so a
 from-scratch install resolves them and the theme type-checks
-(`package.json:18-33 @0158357`).
+(`package.json:18-33 @0158357`); complementing this, the theme's own
+`tsconfig.json` pins `react`/`react-dom` type resolution to the local v18
+`@types` via `paths`, so the type-check sees a single React version
+(`packages/keycloak-theme/tsconfig.json:12 @380cb06`).
 
 ## See also
 

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 4a48ae298461ef9b999a4d44cd105e8ba76d2bf9
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
 files: [packages/api-server/, packages/api-server-api/, docs/architecture/platform-topology.md]
-updated: 2026-06-20
+updated: 2026-06-23
 ---
 
 # api-server

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
 files: [packages/controller/main.go, packages/controller/api/v1/, packages/controller/pkg/reconciler/, docs/architecture/platform-topology.md]
-updated: 2026-06-19
+updated: 2026-06-23
 ---
 
 # controller

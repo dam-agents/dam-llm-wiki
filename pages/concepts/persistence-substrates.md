@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
-files: [docs/architecture/persistence.md]
-updated: 2026-06-19
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md]
+updated: 2026-06-23
 ---
 
 # Persistence substrates
@@ -19,6 +19,15 @@ agent (`docs/architecture/persistence.md @662ebe4`):
 The controller never touches Postgres; the api-server never writes `status`. The
 agent's only durable surface is the PVC — everything the platform knows *about*
 the agent is mirrored onto Postgres or the CR, never written by the agent.
+
+Within the **bundled** Postgres itself there is a further credential boundary:
+the api-server and Keycloak each connect as a `NOSUPERUSER` role
+(`platform_apiserver` / `platform_keycloak`) that owns only its own database,
+with `CONNECT` revoked from `PUBLIC`, so the api-server's connection credential
+cannot reach Keycloak's database or escalate; a separate statement-logged
+superuser is kept only for DBA work (ADR-071,
+`docs/adrs/071-postgres-role-separation.md:1 @380cb06`). See
+[db](../sources/db.md).
 
 ## Choosing Postgres vs. the K8s API
 

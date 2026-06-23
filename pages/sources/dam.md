@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 015835733a44e0bbab24d2a2550f051b5cd5d5a3
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-21
+updated: 2026-06-23
 ---
 
 # dam — DAM agent platform (source overview)

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
+commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
 files: [docs/architecture/security-and-credentials.md, docs/architecture.md]
-updated: 2026-06-19
+updated: 2026-06-23
 ---
 
 # Zero-trust credential gateway
@@ -75,3 +75,4 @@ kubelet, never by Envoy.
 ## See also
 
 - [Envoy gateway](../entities/envoy-gateway.md) · [HITL approvals](hitl-approvals.md) · [Keycloak](../entities/keycloak.md) · [persistence-substrates](persistence-substrates.md) (workspace is outside the trust boundary)
+- [db](../sources/db.md) — a distinct boundary: per-service NOSUPERUSER Postgres roles isolate the platform's own backing store (ADR-071), separate from this agent↔upstream egress gateway.
