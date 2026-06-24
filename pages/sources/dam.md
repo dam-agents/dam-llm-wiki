@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+commit: d34c21a008d3b868fc260838374836ac88fb0807
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-23
+updated: 2026-06-24
 ---
 
 # dam — DAM agent platform (source overview)
@@ -44,7 +44,8 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
 - [ui](ui.md) — the React + Vite single-page app served by the api-server.
 - [cli](cli.md) — the `dam` command-line client (npm-distributed Node package).
 - [agents](agents.md) — per-harness container images (claude-code, codex,
-  pi-agent, bob) built on a shared `platform-base`.
+  pi-agent, bob, nous) built on a shared `platform-base` (nous layers on the
+  claude-code image rather than the base directly).
 - [db](db.md) — the Postgres schema, migrations, and client used by api-server.
 - `api-server-api` / `agent-runtime-api` — shared tRPC routers and types that
   define the wire contracts between the UI/CLI, api-server, and agent pods.

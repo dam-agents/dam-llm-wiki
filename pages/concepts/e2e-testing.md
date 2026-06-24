@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
-files: [packages/e2e/playwright/playwright.config.ts, packages/e2e/playwright/src/config.ts, packages/e2e/playwright/src/lib/auth.ts, packages/e2e/playwright/src/lib/api-client.ts, packages/e2e/playwright/src/lib/agents.ts, packages/e2e/playwright/src/lib/connections.ts, packages/e2e/playwright/src/lib/fixtures.ts, packages/e2e/playwright/src/tests/01-auth.spec.ts, packages/e2e/playwright/src/tests/05-injection.spec.ts, packages/e2e/playwright/src/tests/06-api-keys.spec.ts, packages/e2e/playwright/src/tests/07-slack.spec.ts, packages/e2e/agents/mock/src/main.ts, packages/api-server/src/modules/e2e/services/e2e-service.ts, tasks.toml]
-updated: 2026-06-23
+commit: d34c21a008d3b868fc260838374836ac88fb0807
+files: [packages/e2e/playwright/playwright.config.ts, packages/e2e/playwright/src/config.ts, packages/e2e/playwright/src/lib/auth.ts, packages/e2e/playwright/src/lib/api-client.ts, packages/e2e/playwright/src/lib/agents.ts, packages/e2e/playwright/src/lib/connections.ts, packages/e2e/playwright/src/lib/fixtures.ts, packages/e2e/playwright/src/tests/01-auth.spec.ts, packages/e2e/playwright/src/tests/05-injection.spec.ts, packages/e2e/playwright/src/tests/06-api-keys.spec.ts, packages/e2e/playwright/src/tests/07-slack.spec.ts, packages/e2e/playwright/src/tests/08-session-delete.spec.ts, packages/e2e/agents/mock/src/main.ts, packages/api-server/src/modules/e2e/services/e2e-service.ts, tasks.toml]
+updated: 2026-06-24
 ---
 
 # E2E testing
@@ -58,6 +58,7 @@ state the previous one left behind
 | 05 | `injection` | messages | Verify the [credential gateway](./zero-trust-credential-gateway.md) end to end (below) (`tests/05-injection.spec.ts:14-67 @9d1bc99`). |
 | 06 | `api-keys` | auth | Pure-API authorization matrix for scoped API keys — no browser (`tests/06-api-keys.spec.ts @9d1bc99`). |
 | 07 | `slack` | injection | Foreign-user Slack mention → [Fork](../entities/fork.md) → reply lands in the thread, **and** the fork's egress carries the *foreign* user's injected credential (per-owner isolation across a fork: `testUser2`'s own connection sentinel comes back, not the owner's) (`tests/07-slack.spec.ts:147-166 @380cb06`). |
+| 08 | `session-delete` | agent | Deleting the active [Session](../entities/session.md) from the sidebar clears it **without a page refresh** (the row vanishes on its own) and a session started right after appears as a fresh active row — regression cover for #1084/#1688 (`tests/08-session-delete.spec.ts:21-79 @0ffb6d6`). Creates and deletes its own session, so it leaves no residue and depends on `agent` only to gate on a running agent (`playwright.config.ts:67-75 @0ffb6d6`). |
 
 Subsequent projects reuse the saved `storageState`, so they start already logged
 in (`playwright.config.ts:29-66 @9d1bc99`). The `api-keys` project is the

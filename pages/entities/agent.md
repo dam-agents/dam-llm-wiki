@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+commit: d34c21a008d3b868fc260838374836ac88fb0807
 files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go]
-updated: 2026-06-23
+updated: 2026-06-24
 ---
 
 # Agent
