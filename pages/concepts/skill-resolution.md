@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
-files: [packages/agent-runtime-api/src/modules/skills/source-roots.ts, packages/agent-runtime/src/modules/skills/infrastructure/local-skill-repository.ts, packages/agent-runtime/src/modules/skills/services/scan.ts, packages/api-server/src/modules/skills/infrastructure/public-archive-scanner.ts, docs/architecture/skills.md]
-updated: 2026-06-24
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [packages/agent-runtime-api/src/modules/skills/source-roots.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/agent-runtime/src/modules/skills/infrastructure/local-skill-repository.ts, packages/agent-runtime/src/modules/skills/services/scan.ts, packages/api-server/src/modules/skills/infrastructure/public-archive-scanner.ts, packages/db/src/schema.ts, docs/architecture/skills.md]
+updated: 2026-06-26
 ---
 
 # Skill resolution — which folders DAM scans for skills
@@ -41,6 +41,40 @@ level deep per root — there is no recursive walk
 entered — but the dot-prefixed roots `.claude/skills` / `.agents/skills` are
 reached fine, because they are joined onto `repoDir` as the root path to read,
 not enumerated as children.
+
+## Optional source subdir (`path`) — scan one directory exclusively
+
+As of [#1898](https://github.com/dam-agents/dam/pull/1898) (`@d507c05`), a
+[skill source](../sources/api-server.md) may carry an optional repo-relative
+**`path`** — a single subdirectory the scanner walks *instead of* the defaults.
+When `path` is set, that directory is scanned and skills resolved **exclusively**:
+the `SKILL_SOURCE_ROOTS` union and the top-level `*` fallback are both bypassed,
+so the importer gets exactly the directory they pointed at
+(`local-skill-repository.ts:269-274 @d507c05`,
+`docs/architecture/skills.md:73-75 @d507c05`). When `path` is absent, resolution
+is unchanged from the source-root union above.
+
+The override threads through every discovery path as an optional `subPath`
+argument — clone scan and install resolver in agent-runtime
+(`local-skill-repository.ts:265-274 @d507c05`, `:305-318 @d507c05`; plumbed from
+`scan.ts:114 @d507c05`, `:141 @d507c05`) and the api-server's public-archive scan
+(`public-archive-scanner.ts:123-135 @d507c05`). All three guard the join against
+escape — a leading `/` or any `..` segment is rejected — even though the
+api-server already validates the path at source-creation time
+(`local-skill-repository.ts:261-263 @d507c05`,
+`public-archive-scanner.ts:119-121 @d507c05`).
+
+`path` is a property of the source, resolved server-side, and is **denormalized
+onto each installed ref** (`agent_skills.path`,
+`packages/db/src/schema.ts:185 @d507c05`) at install time, so the apply path
+resolves the skill dir without re-reading the source — which may be a
+non-persisted system/template entry, or since deleted. The stored column lives on
+`skill_sources` (`schema.ts:161 @d507c05`); one path per `(owner, gitUrl)`,
+changing it is delete + re-add. The `skill-ref` contribution carries the resolved
+`path` over the runtime channel
+(`packages/agent-runtime-api/src/modules/runtime/types.ts:77 @d507c05`,
+delivered by the state-builder at
+`packages/api-server/src/modules/runtime-delivery/services/state-builder.ts:141 @d507c05`).
 
 ## Dedupe by name — first root wins
 

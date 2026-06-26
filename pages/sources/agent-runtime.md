@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
+commit: d507c05fb3683c901473b5166766db03ce14fb29
 files: [packages/agent-runtime/src/, packages/agent-runtime-api/src/, docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md]
-updated: 2026-06-24
+updated: 2026-06-26
 ---
 
 # agent-runtime

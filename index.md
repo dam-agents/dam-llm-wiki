@@ -38,4 +38,4 @@ for running agent harnesses headless in the cloud.
 - [HITL approvals & egress rules](pages/concepts/hitl-approvals.md) — the human-in-the-loop gate on egress and tool calls.
 - [Connections & contributions](pages/concepts/connections-and-contributions.md) — the runtime channel, outbox, and apply state machine.
 - [E2E testing](pages/concepts/e2e-testing.md) — Playwright specs driving a real k3s cluster with a scriptable mock agent.
-- [Skill resolution](pages/concepts/skill-resolution.md) — which folders DAM scans to discover/install skills from a source (`skills/`, `.claude/skills/`, `.agents/skills/`; repo root as fallback).
+- [Skill resolution](pages/concepts/skill-resolution.md) — which folders DAM scans to discover/install skills from a source (`skills/`, `.claude/skills/`, `.agents/skills/`; repo root as fallback), or a single pinned subdir (`path`).

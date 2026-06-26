@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+commit: d507c05fb3683c901473b5166766db03ce14fb29
 files: [docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md, packages/agent-runtime/src/modules/acp/]
-updated: 2026-06-23
+updated: 2026-06-26
 ---
 
 # ACP (Agent Client Protocol)

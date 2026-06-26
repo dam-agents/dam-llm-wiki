@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
+commit: d507c05fb3683c901473b5166766db03ce14fb29
 files: [packages/db/src/schema.ts, packages/db/src/migrate.ts, packages/db/src/client.ts, packages/db/README.md, docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, docs/notes/postgres-role-operations.md, deploy/helm/platform/templates/postgres.yaml, deploy/helm/platform/templates/postgres-migrate-roles.yaml, deploy/helm/platform/values.yaml]
-updated: 2026-06-24
+updated: 2026-06-26
 ---
 
 # db
@@ -12,9 +12,21 @@ The Postgres layer the [api-server](api-server.md) owns end-to-end — the
 (`docs/architecture/persistence.md @662ebe4`). It holds everything that must be
 queryable when no agent pod is running: channel routing/bindings, identity links
 + auth allow-list + API keys, the skills catalog (sources, install records,
-publish history), the activity log + agent ownership mirror, and
-[schedules](../entities/schedule.md). **Session metadata is not here** — it is
-agent-owned on the PVC.
+publish history), the activity log + agent ownership mirror,
+[schedules](../entities/schedule.md), and per-agent user-typed env. **Session
+metadata is not here** — it is agent-owned on the PVC.
+
+As of [#1899](https://github.com/dam-agents/dam/pull/1899) (`@d507c05`,
+migration `0003_smart_squadron_sinister.sql`) the **`agent_env`** table holds
+user-typed env per agent — `(agent_id, name, value)` keyed on `(agent_id, name)`,
+indexed by `agent_id` (`packages/db/src/schema.ts:269-279 @d507c05`). It is the
+store behind the UI Environment editor and is read by the api-server's
+state-builder as `env` [contributions](../concepts/connections-and-contributions.md),
+replacing the Agent CR's `spec.env` (the CR field is retained but no longer read).
+The companion migration `0004_open_mariko_yashida.sql` adds a nullable `path`
+column to both `skill_sources` and `agent_skills` for the
+[skill-source subdir](../concepts/skill-resolution.md) feature
+(`schema.ts:161 @d507c05`, `:185 @d507c05`).
 
 ## Layout (`packages/db/src/`)
 

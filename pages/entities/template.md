@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
-files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, docs/architecture/agent-lifecycle.md]
-updated: 2026-06-24
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, docs/architecture/agent-lifecycle.md, packages/api-server/src/modules/agents/services/agents-service.ts]
+updated: 2026-06-26
 ---
 
 # Template
@@ -20,11 +20,16 @@ reconciles it" test for CRD-hood — only the api-server reads them.
 
 ## Create-time only
 
-A Template contributes at **create time only**: the api-server's
-`assembleSpecFromTemplate` step copies template image/mounts/env into the new
-Agent's `spec`. The controller never reads the Template again at pod start, so
-**editing a Template never re-flows into a running Agent** — there is no
-"template envs" runtime layer (`docs/architecture/agent-lifecycle.md @662ebe4`).
+A Template contributes at **create time only**: the api-server copies template
+image/mounts into the new Agent's `spec`, and — since
+[#1899](https://github.com/dam-agents/dam/pull/1899) (`@d507c05`) — seeds the
+template's **env into Postgres `agent_env`** rather than `spec.env`, so it rides
+the runtime channel like user env (any caller-supplied env is ordered last, so a
+user value wins a same-named template default)
+(`packages/api-server/src/modules/agents/services/agents-service.ts:281-284 @d507c05`,
+`:345-351 @d507c05`). The controller never reads the Template again at pod start,
+so **editing a Template never re-flows into a running Agent** — there is no
+"template envs" runtime layer (`docs/architecture/agent-lifecycle.md @d507c05`).
 The default Claude Code template persists the workspace and `$HOME`.
 
 ## See also

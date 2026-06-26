@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
-files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/persistence.md, packages/api-server-api/src/modules/connections/providers.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/api-server/src/modules/connections/domain/gitconfig-contribution.ts, packages/api-server/src/modules/connections/infrastructure/github-identity.ts, packages/api-server/src/modules/connections/services/oauth-flow.ts]
-updated: 2026-06-24
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/connections.md, docs/architecture/persistence.md, packages/api-server-api/src/modules/connections/providers.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts, packages/api-server/src/modules/agents/infrastructure/agent-env-repository.ts, packages/api-server/src/modules/connections/domain/gitconfig-contribution.ts, packages/api-server/src/modules/connections/infrastructure/github-identity.ts, packages/api-server/src/modules/connections/services/oauth-flow.ts]
+updated: 2026-06-26
 ---
 
 # Connections & contributions
@@ -34,6 +34,31 @@ delivers declarative configuration and one-shot events to a running
   (`packages/agent-runtime-api/src/modules/runtime/types.ts:61 @380cb06`).
 - **AuthConfig** — `oauth` | `header` | `none`; `header` covers any
   header-injected static credential, distinguished by `headerName` + `valueFormat`.
+
+## The `env` contribution — three sources, user wins
+
+The `env` kind is no longer just credential-derived. As of
+[#1899](https://github.com/dam-agents/dam/pull/1899) (`@d507c05`) **three sources**
+feed it (`docs/architecture/connections.md @d507c05`):
+
+- **user-typed env** — the UI Environment editor, stored in Postgres `agent_env`
+  (`agent_id`, `name`, `value`), the editor sending the complete replacement set
+  (`packages/api-server/src/modules/agents/infrastructure/agent-env-repository.ts:35-49 @d507c05`);
+- **connection-derived env** — a credential placeholder the [gateway](zero-trust-credential-gateway.md)
+  swaps on the wire;
+- **secret-derived env** — from the Agent's mounted credential Secrets.
+
+For user-typed and other non-credential config env the contribution carries the
+**literal value** (in the `placeholder` field); only credential-derived env
+carries a placeholder the gateway rewrites. This replaces the Agent CR's
+`spec.env`: the controller no longer reads it (see [agent-lifecycle](agent-lifecycle.md)),
+so an env change applies over the runtime channel at the next idle turn with no
+pod roll. The state-builder emits **user env first** in the contribution list,
+and because the on-pod env driver is *first-occurrence-wins*, user env shadows a
+same-named connection or secret env
+(`packages/api-server/src/modules/runtime-delivery/services/state-builder.ts:60-71 @d507c05`,
+`:87-100 @d507c05`). The `env` contribution itself remains a wire-level kind
+(`packages/agent-runtime-api/src/modules/runtime/types.ts @d507c05`).
 
 ## Provider presets — one source of truth
 

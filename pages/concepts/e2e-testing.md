@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
-files: [packages/e2e/playwright/playwright.config.ts, packages/e2e/playwright/src/config.ts, packages/e2e/playwright/src/lib/auth.ts, packages/e2e/playwright/src/lib/api-client.ts, packages/e2e/playwright/src/lib/agents.ts, packages/e2e/playwright/src/lib/connections.ts, packages/e2e/playwright/src/lib/fixtures.ts, packages/e2e/playwright/src/tests/01-auth.spec.ts, packages/e2e/playwright/src/tests/05-injection.spec.ts, packages/e2e/playwright/src/tests/06-api-keys.spec.ts, packages/e2e/playwright/src/tests/07-slack.spec.ts, packages/e2e/playwright/src/tests/08-session-delete.spec.ts, packages/e2e/agents/mock/src/main.ts, packages/api-server/src/modules/e2e/services/e2e-service.ts, tasks.toml]
-updated: 2026-06-24
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [packages/e2e/playwright/playwright.config.ts, packages/e2e/playwright/src/config.ts, packages/e2e/playwright/src/lib/auth.ts, packages/e2e/playwright/src/lib/api-client.ts, packages/e2e/playwright/src/lib/agents.ts, packages/e2e/playwright/src/lib/connections.ts, packages/e2e/playwright/src/lib/fixtures.ts, packages/e2e/playwright/src/tests/01-auth.spec.ts, packages/e2e/playwright/src/tests/05-injection.spec.ts, packages/e2e/playwright/src/tests/06-api-keys.spec.ts, packages/e2e/playwright/src/tests/07-slack.spec.ts, packages/e2e/playwright/src/tests/08-session-delete.spec.ts, packages/e2e/playwright/src/tests/09-user-env.spec.ts, packages/e2e/agents/mock/src/main.ts, packages/api-server/src/modules/e2e/services/e2e-service.ts, tasks.toml]
+updated: 2026-06-26
 ---
 
 # E2E testing
@@ -59,6 +59,15 @@ state the previous one left behind
 | 06 | `api-keys` | auth | Pure-API authorization matrix for scoped API keys — no browser (`tests/06-api-keys.spec.ts @9d1bc99`). |
 | 07 | `slack` | injection | Foreign-user Slack mention → [Fork](../entities/fork.md) → reply lands in the thread, **and** the fork's egress carries the *foreign* user's injected credential (per-owner isolation across a fork: `testUser2`'s own connection sentinel comes back, not the owner's) (`tests/07-slack.spec.ts:147-166 @380cb06`). |
 | 08 | `session-delete` | agent | Deleting the active [Session](../entities/session.md) from the sidebar clears it **without a page refresh** (the row vanishes on its own) and a session started right after appears as a fresh active row — regression cover for #1084/#1688 (`tests/08-session-delete.spec.ts:21-79 @0ffb6d6`). Creates and deletes its own session, so it leaves no residue and depends on `agent` only to gate on a running agent (`playwright.config.ts:67-75 @0ffb6d6`). |
+| 09 | (none) | — | **User env rides the contribution rail.** Sets agent env via `api.agents.update` and polls the live pod env (`api.e2e.getEnv`) to prove it converges with **no pod roll**, that the editor view is fed from the `agent_env` store not the CR, that an edit re-converges next turn, that a user entry **shadows** a same-named [connection](./connections-and-contributions.md) env, and that clearing it reverts to the connection placeholder (`tests/09-user-env.spec.ts:37-114 @d507c05`). Covers [#1899](https://github.com/dam-agents/dam/pull/1899). |
+
+> **Flag (unresolved at `@d507c05`):** spec **09** is present in `src/tests/` but
+> **no Playwright project registers it.** Every project pins an explicit numbered
+> `testMatch` (`/01-.*/` … `/08-.*/`) and `playwright.config.ts` was not touched by
+> [#1899](https://github.com/dam-agents/dam/pull/1899) (`playwright.config.ts:22-74 @d507c05`),
+> so the `09-user-env` file matches no project and does not run in the serial
+> pipeline as configured. Either a follow-up wires in the project or the omission
+> is an oversight — recorded here rather than reconciled.
 
 Subsequent projects reuse the saved `storageState`, so they start already logged
 in (`playwright.config.ts:29-66 @9d1bc99`). The `api-keys` project is the

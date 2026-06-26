@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
-files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go]
-updated: 2026-06-24
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go, packages/controller/pkg/reconciler/resources.go]
+updated: 2026-06-26
 ---
 
 # Agent
@@ -19,9 +19,15 @@ A single `Agent` custom resource (`agent-platform.ai/v1`,
 `packages/controller/api/v1/agent_types.go @662ebe4`) with the
 [spec/status split](../concepts/persistence-substrates.md):
 
-- **`spec`** (api-server-written) — image, mount declarations, env, secret refs,
+- **`spec`** (api-server-written) — image, mount declarations, secret refs,
   image-pull secret ref, granted secret + connection IDs, allowed users.
-  Optionally derived from a [Template](template.md) at create time.
+  Optionally derived from a [Template](template.md) at create time. The `spec.env`
+  field is **retained but no longer read** since
+  [#1899](https://github.com/dam-agents/dam/pull/1899) (`@d507c05`): user-typed env
+  now lives in Postgres `agent_env` and reaches the pod over the runtime channel,
+  not the pod spec — the controller projects only chart-level platform defaults
+  into pod env (`packages/controller/pkg/reconciler/resources.go:113-114 @d507c05`).
+  See [agent-lifecycle](../concepts/agent-lifecycle.md).
 - **`status`** (controller-written) — observed conditions (`Ready`,
   `AgentPodReady`, `GatewayPodReady`, `Reconciled`).
 - **annotations** — high-frequency signals: `last-activity`, active-session

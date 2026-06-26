@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
-files: [docs/architecture/agent-lifecycle.md]
-updated: 2026-06-19
+commit: d507c05fb3683c901473b5166766db03ce14fb29
+files: [docs/architecture/agent-lifecycle.md, packages/controller/pkg/reconciler/resources.go, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts]
+updated: 2026-06-26
 ---
 
 # Agent lifecycle
@@ -22,9 +22,17 @@ running-vs-hibernated is observed status the controller derives from activity.
   if any, plus env, secret refs, allowed users). The
   [controller](../sources/controller.md) reconciles the paired resources. A
   private-registry pull Secret, if any, is written *before* the CR and rolled
-  back on failure. Pod env composes three layers (platform envs →
-  `credentialEnvVars` → `agent.env`, last wins). Template env contributes at
-  create time only — editing a Template never re-flows into a running Agent.
+  back on failure. As of [#1899](https://github.com/dam-agents/dam/pull/1899)
+  (`@d507c05`) the controller composes pod env from **platform wiring + any
+  chart-level platform defaults only** — `spec.env` is no longer read
+  (`packages/controller/pkg/reconciler/resources.go:113-114 @d507c05`). Everything
+  tied to an Agent's *configuration* — user-typed env (the UI Environment editor),
+  connection-/secret-derived env, and template env — rides the **runtime channel**
+  as `env`-kind [contributions](connections-and-contributions.md) instead, applied
+  at the next idle turn with **no pod roll**. User-typed and template env are
+  stored in Postgres `agent_env`; the CR's `spec.env` field is retained but no
+  longer read. Template env is seeded into `agent_env` at **create time only** —
+  editing a Template never re-flows into a running Agent.
 - **Wake** — every caller routes through a single **reachability primitive**:
   the controller-published `Ready` condition is the authoritative "can I call
   this pod?". It pokes the `last-activity` annotation (the reconciler scales up
