@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: e54e8f1869e16b5ccd6968dd68ce7ce78d215891
 files: [packages/ui/src/, docs/architecture/platform-topology.md]
-updated: 2026-06-26
+updated: 2026-06-27
 ---
 
 # ui
