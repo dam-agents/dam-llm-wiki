@@ -1,15 +1,15 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [packages/controller/main.go, packages/controller/api/v1/, packages/controller/pkg/reconciler/, docs/architecture/platform-topology.md]
-updated: 2026-06-26
+updated: 2026-06-30
 ---
 
 # controller
 
 A stateless **Go** reconciler (client-go) — the platform's Kubernetes operator.
-It watches the `Agent` and `Fork` custom resources (`agent-platform.ai/v1`) plus
-agent-labelled pods, and reconciles each agent's running infrastructure. It
+It watches the `Agent`, `Fork`, and `Run` custom resources (`agent-platform.ai/v1`)
+plus agent-labelled pods, and reconciles each agent's running infrastructure. It
 writes **only the `status` subresource** of resources it owns and never writes
 `spec` — the spec/status split makes write contention with the api-server
 structurally impossible (`docs/architecture/platform-topology.md @662ebe4`).
@@ -26,16 +26,46 @@ bootstrap ConfigMap + leaf-TLS Certificate
 api-server's sole routing signal) and hibernates idle agents by scaling the
 pair to zero — the schedule loop lives in the api-server, not here.
 
+## Three reconciled CRs
+
+Each CR has its own dynamic informer, work queue, and worker
+(`packages/controller/main.go:117-223 @70c53ae`):
+
+- **Agent** — the durable per-agent resource (above); resolved via a getter.
+- **Fork** — the Job-shaped per-turn run; see [Fork](../entities/fork.md).
+- **Run** — the bare-Pod, single-command executor behind the in-pod `dam-run`
+  CLI, added in [#2120](https://github.com/dam-agents/dam/pull/2120). The
+  `RunReconciler` is deliberately lighter than the Fork's: the executor runs as
+  the **parent Agent's own owner** and routes egress through the parent's
+  already-running gateway, so it renders just a bare Pod + one egress
+  NetworkPolicy (no gateway/cert/SA/AuthorizationPolicy of its own)
+  (`packages/controller/pkg/reconciler/run.go:32-38 @70c53ae`). The api-server
+  deletes the `Run` when the `dam-run` stream closes; the controller keeps a
+  hard-lifetime reaper (`RunMaxLifetime` 60 min) as a GC backstop for a `Run` the
+  api-server never cleaned up (`packages/controller/pkg/reconciler/run.go:20-29,69-76 @70c53ae`).
+  A pod-readiness transition re-enqueues the owning `Run` so the Ready+`podIP`
+  status is written without waiting for the informer resync — interactive
+  `dam-run` startup stays snappy (`packages/controller/main.go:313-322 @70c53ae`).
+  See [Run](../entities/run.md).
+
+The Fork and Run workers share a generic `runCachedWorker` (lister-decoded CRs);
+the Agent worker resolves via a getter. The single unstructured→typed conversion
+point for every CR is the generic `FromCacheObject[T]`
+(`packages/controller/main.go:277-309 @70c53ae`,
+`packages/controller/pkg/reconciler/crd.go:24-44 @70c53ae`).
+
 ## Code layout
 
-- `api/v1/` — CRD Go types: `agent_types.go`, `fork_types.go`, the group-version
-  info, and generated deepcopy/schema code (`packages/controller/api/v1/ @662ebe4`).
+- `api/v1/` — CRD Go types: `agent_types.go`, `fork_types.go`, `run_types.go`,
+  the group-version info, and generated deepcopy/schema code
+  (`packages/controller/api/v1/ @70c53ae`).
 - `pkg/reconciler/` — the reconcile logic, one file per concern:
   `agent_reconciler.go`, `envoy.go`, `gateway.go`, `network_policy.go`,
   `authorization_policy.go`, `extauthz_service.go`, `fork.go`/`fork_resources.go`,
-  `hibernation.go`, `idlechecker.go`, `warmpool.go`, `service_account.go`,
-  `status.go`, `iptables_init.go`, `np_gate_init.go`, `pod_termination.go`
-  (`packages/controller/pkg/reconciler/ @662ebe4`).
+  `run.go`/`run_resources.go`, the shared `ephemeral_pod.go` (the Fork/Run pod
+  builder), `hibernation.go`, `idlechecker.go`, `warmpool.go`,
+  `service_account.go`, `status.go`, `iptables_init.go`, `np_gate_init.go`,
+  `pod_termination.go` (`packages/controller/pkg/reconciler/ @70c53ae`).
 - `pkg/config/`, `pkg/crdcheck/`, `pkg/types/`, `main.go` — config, CRD
   presence checks, shared types, entrypoint.
 
@@ -47,3 +77,4 @@ under `deploy/helm/platform/ @662ebe4`.
 - [agent-lifecycle](../concepts/agent-lifecycle.md) — create → wake → hibernate → delete, driven by this reconciler and the api-server.
 - [persistence-substrates](../concepts/persistence-substrates.md) — the `spec`/`status` ownership split and the warm PVC pool.
 - [zero-trust-credential-gateway](../concepts/zero-trust-credential-gateway.md) — the NetworkPolicies and AuthorizationPolicies it renders.
+- [Fork](../entities/fork.md) · [Run](../entities/run.md) — the two ephemeral Agent-derived CRs it reconciles.

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/security-and-credentials.md, packages/controller/api/v1/fork_types.go]
-updated: 2026-06-26
+updated: 2026-06-30
 ---
 
 # Fork
@@ -38,6 +38,17 @@ fork can't impersonate the parent (`docs/architecture/security-and-credentials.m
 Its `agent` label still points at the parent so traffic resolves under the
 parent's egress rules; its own pair key isolates it.
 
+## vs. Run
+
+The [Run](run.md) (the `dam-run` executor, added in
+[#2120](https://github.com/dam-agents/dam/pull/2120)) is the *other* ephemeral
+Agent-derived CR, and the two share the controller's ephemeral-pod builder. But
+they make **opposite identity trades**: a Fork is a Job with its **own** isolated
+SA and gateway; a Run is a bare Pod that runs as the **parent's own owner** and
+borrows the parent's gateway, holding no SA or policy of its own
+(`docs/architecture/security-and-credentials.md @70c53ae`). A Fork runs to
+completion (Job); a Run lives only as long as its `dam-run` stream.
+
 ## See also
 
-- [Agent](agent.md) · [agent-lifecycle](../concepts/agent-lifecycle.md) · [zero-trust-credential-gateway](../concepts/zero-trust-credential-gateway.md)
+- [Agent](agent.md) · [Run](run.md) · [agent-lifecycle](../concepts/agent-lifecycle.md) · [zero-trust-credential-gateway](../concepts/zero-trust-credential-gateway.md)

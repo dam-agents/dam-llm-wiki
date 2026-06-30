@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
-files: [docs/architecture/agent-lifecycle.md, docs/ubiquitous-language.md]
-updated: 2026-06-26
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+files: [docs/architecture/agent-lifecycle.md, docs/ubiquitous-language.md, packages/agent-runtime/src/modules/acp/infrastructure/session-metadata-store.ts, packages/agent-runtime/src/modules/acp/services/acp-runtime.ts]
+updated: 2026-06-30
 ---
 
 # Session
@@ -39,6 +39,18 @@ log/fan-out/resume. One viewer at a time; the harness's own on-disk store (e.g.
 Unrelated to the session/mode machinery — no `sessionId`, no DB row, no harness
 involvement. A per-connection `sshd -i` relays raw bytes; an open connection
 pins the agent `active-session` so it won't hibernate.
+
+## Last-activity timestamp
+
+The session-metadata store also records a per-session **`lastActivityAt`**: when
+a real prompt arrives, the runtime stamps it as genuine activity, and the value
+is surfaced over ACP as the session's `updatedAt`
+([#2049](https://github.com/dam-agents/dam/pull/2049),
+`packages/agent-runtime/src/modules/acp/services/acp-runtime.ts:1227-1229,1405 @70c53ae`,
+`packages/agent-runtime/src/modules/acp/infrastructure/session-metadata-store.ts:76-87 @70c53ae`).
+This lets the session list **sort and display by last message**, rather than by
+the harness JSONL's file-modification time (which a passive `session/load` would
+bump). It is set only by a prompt, and is preserved across metadata `set` writes.
 
 ## Mode & continuity
 

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [packages/agent-runtime/src/, packages/agent-runtime-api/src/, docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md]
-updated: 2026-06-26
+updated: 2026-06-30
 ---
 
 # agent-runtime
@@ -37,17 +37,28 @@ gateway (`docs/architecture/platform-topology.md @662ebe4`).
 - **File import** — extracts a streamed tarball on the harness port into the PVC.
 - **Pod service** — supervises at most one optional background process the image
   provides (e.g. claude-code's local model gateway), with SIGHUP reload.
+- **Exec-only mode** — when `PLATFORM_EXEC_ONLY=1` (set on
+  [Run](../entities/run.md) executor pods, added in
+  [#2120](https://github.com/dam-agents/dam/pull/2120)), the same binary boots a
+  stripped server: it serves one `/api/exec` WebSocket — a single PTY-spawned
+  command speaking the terminal frame protocol — and **skips the runtime-channel
+  `hello`** entirely. This is the in-pod backend of the `dam-run` CLI; the
+  command argv arrives as URL query, never persisted in the `Run` CR
+  (`packages/agent-runtime/src/server.ts:56-62,403-435 @70c53ae`,
+  `packages/agent-runtime/src/modules/exec.ts:12-18 @70c53ae`).
 
 ## Code layout (`packages/agent-runtime/src/`)
 
 `server.ts` (entrypoint), `core/`, and `modules/`: `acp/`, `runtime-channel/`,
-`skills/`, `import/`, `files.ts`, `git.ts`, `ssh.ts`, `pod-service.ts`,
-`config.ts` (`packages/agent-runtime/src/modules/ @662ebe4`). The tRPC wire
-contract lives in the sibling `agent-runtime-api` package
+`skills/`, `import/`, `files.ts`, `git.ts`, `ssh.ts`, `exec.ts` (the exec-only
+`/api/exec` command runner), `pod-service.ts`, `config.ts`
+(`packages/agent-runtime/src/modules/ @70c53ae`). The tRPC wire contract lives in
+the sibling `agent-runtime-api` package
 (`packages/agent-runtime-api/src/router.ts @662ebe4`).
 
 ## See also
 
 - [agent-lifecycle](../concepts/agent-lifecycle.md) — the session/wake/hibernate machinery this implements.
 - [Session](../entities/session.md) — the session model and resume mediation.
+- [Run](../entities/run.md) — the exec-only executor pod that boots this binary for `dam-run`.
 - [zero-trust-credential-gateway](../concepts/zero-trust-credential-gateway.md) — why the pod has no credentials of its own.

@@ -11,7 +11,7 @@ for running agent harnesses headless in the cloud.
 
 - [dam — DAM agent platform (overview)](pages/sources/dam.md) — what DAM is, repo shape, module map, and where to start.
 - [api-server](pages/sources/api-server.md) — TypeScript backend: user API, ACP relay, sole writer of spec + Postgres.
-- [controller](pages/sources/controller.md) — Go Kubernetes operator reconciling the Agent/Fork CRs.
+- [controller](pages/sources/controller.md) — Go Kubernetes operator reconciling the Agent/Fork/Run CRs.
 - [agent-runtime](pages/sources/agent-runtime.md) — per-agent pod process: ACP server, terminal/SSH, runtime channel.
 - [ui](pages/sources/ui.md) — React + Vite single-page app and the only management surface.
 - [cli](pages/sources/cli.md) — the `dam` command-line client.
@@ -25,6 +25,7 @@ for running agent harnesses headless in the cloud.
 - [Session](pages/entities/session.md) — one agent-owned conversation; chat, terminal, and SSH models.
 - [Schedule](pages/entities/schedule.md) — a cron/RRULE/heartbeat task attached to an Agent (Postgres row).
 - [Fork](pages/entities/fork.md) — per-turn, Job-shaped run impersonating a Slack foreign replier.
+- [Run](pages/entities/run.md) — ephemeral single-command executor behind the in-pod `dam-run` CLI; a bare Pod borrowing the parent's gateway.
 - [Envoy gateway](pages/entities/envoy-gateway.md) — per-agent egress proxy that injects credentials on the wire.
 - [Keycloak](pages/entities/keycloak.md) — the in-cluster OIDC identity authority.
 

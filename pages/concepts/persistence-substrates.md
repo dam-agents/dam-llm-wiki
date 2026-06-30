@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
-files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md]
-updated: 2026-06-23
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, packages/controller/api/v1/run_types.go]
+updated: 2026-06-30
 ---
 
 # Persistence substrates
@@ -13,8 +13,8 @@ agent (`docs/architecture/persistence.md @662ebe4`):
 | Substrate | Owner / writer | Holds |
 | --- | --- | --- |
 | **Postgres** (Application State) | api-server only | Channel routing, identity/auth + API keys, skills catalog, activity log + agent mirror, [schedules](../entities/schedule.md). Queryable with no pod running. See [db](../sources/db.md). |
-| **Custom resources** (Infra State) | `spec`: api-server · `status`: controller | [Agent](../entities/agent.md), [Fork](../entities/fork.md). |
-| **Per-Agent PVCs** | agent process | Workspace + `$HOME`: git checkouts, tool caches, agent memory, skills, and the **session-metadata state file** (sole source of truth for per-session mode/type/scheduleId). See [Session](../entities/session.md). |
+| **Custom resources** (Infra State) | `spec`: api-server · `status`: controller | [Agent](../entities/agent.md), [Fork](../entities/fork.md), [Run](../entities/run.md). |
+| **Per-Agent PVCs** | agent process | Workspace + `$HOME`: git checkouts, tool caches, agent memory, skills, and the **session-metadata state file** (sole source of truth for per-session mode/type/scheduleId and the time of the session's last genuine message). See [Session](../entities/session.md). |
 
 The controller never touches Postgres; the api-server never writes `status`. The
 agent's only durable surface is the PVC — everything the platform knows *about*
@@ -37,6 +37,14 @@ single-writer split exists only to coordinate api-server and controller, so
 without a controller reader it has no purpose. This is why
 [Schedules](../entities/schedule.md) live in Postgres and
 [Templates](../entities/template.md) never became a CRD.
+
+A CRD need not be *durable* state, though: the [Run](../entities/run.md) is a
+reconciled CR (so it is a CRD by this rule) but **ephemeral** — its lifetime is
+bound to a single `dam-run` stream, the api-server deletes it when the stream
+closes, and the command argv is deliberately never written to it, so no command
+bytes land in etcd (`docs/architecture/agent-lifecycle.md @70c53ae`,
+`packages/controller/api/v1/run_types.go:7-18 @70c53ae`). It is a control-plane
+handle for an executor pod, not stored state.
 
 ## CR ownership & annotations
 

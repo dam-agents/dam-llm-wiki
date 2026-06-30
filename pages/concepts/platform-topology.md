@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 662ebe4c88029788829246170e17465c69523521
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [docs/architecture/platform-topology.md, docs/architecture.md]
-updated: 2026-06-19
+updated: 2026-06-30
 ---
 
 # Platform topology
@@ -10,7 +10,7 @@ updated: 2026-06-19
 DAM runs as **four long-lived subsystems** on Kubernetes plus per-agent paired
 pods (`docs/architecture/platform-topology.md @662ebe4`):
 
-- [controller](../sources/controller.md) — Go, reconciles the `Agent`/`Fork` CRs.
+- [controller](../sources/controller.md) — Go, reconciles the `Agent`/`Fork`/`Run` CRs.
 - [api-server](../sources/api-server.md) — TypeScript, brokers user requests and
   relays agent traffic.
 - per-agent [agent-runtime](../sources/agent-runtime.md) + **gateway** pods — the
@@ -32,6 +32,7 @@ the `spec`/`status` subresource split so writes never contend.
 | cli → api-server | tRPC + WS frames | Agent resolution, auth, `dam chat` attach |
 | api-server → agent-runtime | WebSocket (ACP) / HTTP (tRPC) | Chat relay (one hop) + in-pod file ops |
 | agent-runtime → api-server (harness port, via gateway) | HTTP | MCP tools, runtime-channel `hello` |
+| agent (`dam-run`) → api-server (harness port, via gateway) | WebSocket (exec frames) | Ephemeral-executor stdio relay: the api-server stands up a [Run](../entities/run.md) pod and relays to its `/api/exec` |
 | gateway → api-server | gRPC | HITL ext_authz Check |
 | controller → K8s API | watch / status writes | Reconciliation |
 | api-server → K8s API | REST | Spec writes, pod wake |
@@ -47,10 +48,14 @@ share no routes. All ACP is relay-only — the UI never dials pods directly.
 ## K8s resource model
 
 Controller-reconciled domain resources are CRDs under `agent-platform.ai/v1`
-([Agent](../entities/agent.md), [Fork](../entities/fork.md)), each with a status
-subresource: `spec` is api-server-owned user intent, `status` is
-controller-owned observed state whose `Ready` condition is the api-server's sole
-routing signal. Two domain resources are deliberately **not** CRDs:
+([Agent](../entities/agent.md), [Fork](../entities/fork.md),
+[Run](../entities/run.md)), each with a status subresource: `spec` is
+api-server-owned user intent, `status` is controller-owned observed state whose
+`Ready` condition is the api-server's sole routing signal. The `Run` — the
+ephemeral single-command executor behind the in-pod `dam-run` CLI — is the
+newest, reconciled to a bare executor pod and carrying only a parent-agent ref
+(`docs/architecture/platform-topology.md @70c53ae`). Two domain resources are
+deliberately **not** CRDs:
 [Templates](../entities/template.md) (chart-rendered ConfigMaps) and
 [Schedules](../entities/schedule.md) (Postgres rows) — see
 [persistence-substrates](persistence-substrates.md).

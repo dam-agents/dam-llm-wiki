@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
-files: [docs/architecture/security-and-credentials.md, docs/architecture.md]
-updated: 2026-06-23
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+files: [docs/architecture/security-and-credentials.md, docs/architecture.md, packages/api-server/src/apps/harness-api-server/harness-run-relay.ts]
+updated: 2026-06-30
 ---
 
 # Zero-trust credential gateway
@@ -61,6 +61,17 @@ See [HITL approvals](hitl-approvals.md).
 - **Forks** get their **own** per-fork SA, narrowly scoped to
   `/api/agents/<parent>/mcp` and the parent's ext-authz Service, so a compromised
   fork can't impersonate the parent.
+- **[Run](../entities/run.md) executors** (`dam-run`) take the *opposite* trade:
+  no SA, gateway, cert, or AuthorizationPolicy of their own — a single egress
+  NetworkPolicy routes the executor through the **parent's** existing gateway, so
+  its egress boundary is *exactly* the parent's (same credentials, same
+  ext-authz/HITL gate). `dam-run` adds no new privilege — it only dials the
+  harness port the agent can already reach, pinned to the agent's own SA at the
+  waypoint, so an agent spawns executors only for itself. The cost: that identity
+  reaches the parent's full harness surface — runs included — so recursion is
+  bounded by an api-server **per-agent concurrent-run cap (16)**, not
+  structurally (`docs/architecture/security-and-credentials.md @70c53ae`,
+  `packages/api-server/src/apps/harness-api-server/harness-run-relay.ts:11-20 @70c53ae`).
 
 ## Credential storage notes
 
@@ -75,4 +86,5 @@ kubelet, never by Envoy.
 ## See also
 
 - [Envoy gateway](../entities/envoy-gateway.md) · [HITL approvals](hitl-approvals.md) · [Keycloak](../entities/keycloak.md) · [persistence-substrates](persistence-substrates.md) (workspace is outside the trust boundary)
+- [Fork](../entities/fork.md) · [Run](../entities/run.md) — the two ephemeral runs and their opposite identity trades (own SA vs. borrowed parent gateway).
 - [db](../sources/db.md) — a distinct boundary: per-service NOSUPERUSER Postgres roles isolate the platform's own backing store (ADR-071), separate from this agent↔upstream egress gateway.

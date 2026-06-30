@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: e54e8f1869e16b5ccd6968dd68ce7ce78d215891
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-27
+updated: 2026-06-30
 ---
 
 # dam — DAM agent platform (source overview)
@@ -25,7 +25,7 @@ files: ~700 `.ts`, ~120 `.tsx`, ~56 `.go`, plus Helm YAML, ADRs, and docs.
 | Top-level | What lives there |
 | --- | --- |
 | `packages/` | All deployable code (see the module map below). |
-| `deploy/helm/platform/` | The Helm chart that installs the whole platform on Kubernetes, including the `Agent`/`Fork` CRDs. |
+| `deploy/helm/platform/` | The Helm chart that installs the whole platform on Kubernetes, including the `Agent`/`Fork`/`Run` CRDs. |
 | `docs/` | Architecture (`docs/architecture/`), 70 ADRs (`docs/adrs/`), security notes, strategy, and the [ubiquitous-language glossary](#domain-glossary). |
 | `.agents/` / `.claude/` | Skill definitions the repo itself ships for its own agents. |
 | `scripts/`, `tasks.toml`, `mise.toml` | Dev/build task runners. |
@@ -38,7 +38,7 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
 - [api-server](api-server.md) — the TypeScript backend: user-facing tRPC + REST,
   the ACP relay, channels, schedules, approvals, skills, connections, usage.
 - [controller](controller.md) — the Go Kubernetes operator reconciling the
-  `Agent` and `Fork` custom resources into pods, services, and policies.
+  `Agent`, `Fork`, and `Run` custom resources into pods, services, and policies.
 - [agent-runtime](agent-runtime.md) — the per-agent pod process: ACP WebSocket
   server, terminal/SSH relays, the runtime channel, and in-pod skills/files.
 - [ui](ui.md) — the React + Vite single-page app served by the api-server.
@@ -51,7 +51,8 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
   define the wire contracts between the UI/CLI, api-server, and agent pods.
 - `keycloak-theme` — the login/account theme for the in-cluster
   [Keycloak](../entities/keycloak.md) identity provider.
-- `platform-base` — the base container image all harness images extend.
+- `platform-base` — the base container image all harness images extend; also
+  ships the in-pod `dam-run` CLI that backs the [Run](../entities/run.md) executor.
 - `e2e` — browser-driven end-to-end tests. `dev-config` — shared dev tooling.
 
 ## How it fits together
@@ -68,7 +69,7 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
   covers the three-way split: Postgres, custom resources, and per-agent PVCs.
 - **Core resources** — [Agent](../entities/agent.md), [Template](../entities/template.md),
   [Session](../entities/session.md), [Schedule](../entities/schedule.md),
-  [Fork](../entities/fork.md).
+  [Fork](../entities/fork.md), [Run](../entities/run.md).
 
 ## Domain glossary
 

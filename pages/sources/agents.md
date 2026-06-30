@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: e54e8f1869e16b5ccd6968dd68ce7ce78d215891
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [packages/agents/, packages/platform-base/, docs/architecture/agent-lifecycle.md]
-updated: 2026-06-27
+updated: 2026-06-30
 ---
 
 # agents — harness container images
@@ -68,6 +68,18 @@ relays each campaign DESIGN/FINDINGS gate summary into the agent's bound
 Slack/Telegram thread via Nous's own `channels:` webhook feature pointed at
 `127.0.0.1:8765`, calling the per-agent `send_channel_message` MCP tool — no
 external egress, no webhook secret on disk (`packages/agents/nous/README.md @ca1877a`).
+That bridge depends on a build-time fix
+([#2026](https://github.com/dam-agents/dam/pull/2026), `@ecb70c0`): Nous's
+runtime reads `campaign.channels` at every gate, but the pinned `v0.4.0` schema
+omits the `channels:` property while setting `additionalProperties: false`, so
+any campaign using channels is rejected at pre-flight (upstream Nous issue #296).
+A `patch-campaign-schema.py` run during `docker build` mutates the *installed*
+`campaign.schema.yaml` in place to add the property — idempotent, version-agnostic
+(it patches the parsed dict), and self-verifying (asserts a channels-bearing
+campaign now validates **and** an unknown key is still rejected), so it cleanly
+no-ops once a future `NOUS_REF` ships the property
+(`packages/agents/nous/Dockerfile:33-43 @70c53ae`,
+`packages/agents/nous/patch-campaign-schema.py @70c53ae`).
 CI builds it per-arch after `merge-agents` (it pulls its claude-code base by the
 same per-commit tag) and publishes the multi-arch manifest to
 `quay.io/dam-agents/nous`; the template ships `experimental: true`

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [docs/architecture/agent-lifecycle.md, packages/controller/pkg/reconciler/resources.go, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts]
-updated: 2026-06-26
+updated: 2026-06-30
 ---
 
 # Agent lifecycle
@@ -71,6 +71,24 @@ terminal/SSH models, and mode switching.
 Agent derivative that reconciles to a Kubernetes **Job** (run-to-completion),
 used for Slack foreign repliers.
 
+## Run executors (`dam-run`)
+
+A [Run](../entities/run.md) is a different ephemeral shape: a **single-command
+executor** behind the in-pod `dam-run` CLI, added in
+[#2120](https://github.com/dam-agents/dam/pull/2120). `dam-run <cmd>` runs the
+command in a *separate* sandbox pod that shares the calling pod's image,
+configuration, and RWX workspace, with stdio streamed through a PTY so it reads
+as a local invocation (`docs/architecture/agent-lifecycle.md @70c53ae`). The pod
+boots [agent-runtime](../sources/agent-runtime.md) in **exec-only mode** (an
+`/api/exec` endpoint plus health, no runtime-channel hello) and stands up no
+infrastructure of its own — just a bare Pod plus one egress NetworkPolicy into
+the parent's existing gateway, whose credentials and egress boundary it borrows
+wholesale. The flow is synchronous over one WebSocket; when the stream closes the
+api-server deletes the `Run` and K8s GC reaps the executor. Unlike a Fork it
+runs as the **parent Agent's own owner**, so deleting the Agent cascade-deletes
+any in-flight `Run` (`docs/architecture/agent-lifecycle.md @70c53ae`).
+
 ## See also
 
 - [platform-topology](platform-topology.md) · [persistence-substrates](persistence-substrates.md) · [connections-and-contributions](connections-and-contributions.md)
+- [Fork](../entities/fork.md) · [Run](../entities/run.md) — the two ephemeral Agent-derived runs.
