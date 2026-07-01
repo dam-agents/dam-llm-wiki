@@ -2,7 +2,7 @@
 source: dam-agents/dam
 commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # dam — DAM agent platform (source overview)
@@ -67,6 +67,10 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
   [HITL approvals](../concepts/hitl-approvals.md).
 - **State** — [persistence-substrates](../concepts/persistence-substrates.md)
   covers the three-way split: Postgres, custom resources, and per-agent PVCs.
+- **Telemetry** — [observability](../concepts/observability.md) is an optional,
+  bundled ClickStack backend (OTel collector + ClickHouse + HyperDX under
+  `deploy/helm/platform/templates/clickstack/`, gated by `clickstack.enabled`,
+  off by default) that stores the OpenTelemetry signals agents export.
 - **Core resources** — [Agent](../entities/agent.md), [Template](../entities/template.md),
   [Session](../entities/session.md), [Schedule](../entities/schedule.md),
   [Fork](../entities/fork.md), [Run](../entities/run.md).

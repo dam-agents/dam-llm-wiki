@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [packages/api-server/, packages/api-server-api/, deploy/helm/platform/templates/apiserver/rbac.yaml, docs/architecture/platform-topology.md]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # api-server

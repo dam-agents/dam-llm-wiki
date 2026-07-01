@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [docs/architecture/agent-lifecycle.md, docs/ubiquitous-language.md, packages/agent-runtime/src/modules/acp/infrastructure/session-metadata-store.ts, packages/agent-runtime/src/modules/acp/services/acp-runtime.ts]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # Session

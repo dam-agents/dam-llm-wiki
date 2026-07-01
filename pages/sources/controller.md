@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
 commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
-files: [packages/controller/main.go, packages/controller/api/v1/, packages/controller/pkg/reconciler/, docs/architecture/platform-topology.md]
-updated: 2026-06-30
+files: [packages/controller/main.go, packages/controller/api/v1/, packages/controller/pkg/reconciler/, packages/controller/pkg/config/config.go, docs/architecture/platform-topology.md]
+updated: 2026-07-01
 ---
 
 # controller
@@ -25,6 +25,23 @@ bootstrap ConfigMap + leaf-TLS Certificate
 **readiness** from the pod pair onto the Agent `status` (`Ready` is the
 api-server's sole routing signal) and hibernates idle agents by scaling the
 pair to zero — the schedule loop lives in the api-server, not here.
+
+Its **idle checker** (`idlechecker.go`) scans on a timer of 1/6 of the idle
+timeout clamped to 30 s–5 min, and hibernates only when the shared `shouldRun`
+activity gate *and* a live `/api/status` busy-probe both agree the Agent is quiet
+(`packages/controller/pkg/reconciler/idlechecker.go:62-102 @b68af4a`). Each Agent
+may override the chart-wide timeout via `spec.hibernationTimeout` (`"0s"` disables
+hibernation), resolved by `effectiveIdleTimeout` before the gate
+([#1373](https://github.com/dam-agents/dam/pull/1373),
+`packages/controller/pkg/reconciler/hibernation.go:26-50 @b68af4a`). See
+[the idle decision](../concepts/agent-lifecycle.md#the-idle-decision).
+
+When the optional [telemetry backend](../concepts/observability.md) is on, the
+controller reads `PLATFORM_TELEMETRY_COLLECTOR_HOST` and renders a collector
+egress chain into every gateway's Envoy bootstrap that MITM-terminates and stamps
+the trusted `x-platform-agent-id` header
+(`packages/controller/pkg/config/config.go:265-270 @b68af4a`,
+`packages/controller/pkg/reconciler/envoy.go:855-909 @b68af4a`).
 
 ## Three reconciled CRs
 
@@ -78,3 +95,4 @@ under `deploy/helm/platform/ @662ebe4`.
 - [persistence-substrates](../concepts/persistence-substrates.md) — the `spec`/`status` ownership split and the warm PVC pool.
 - [zero-trust-credential-gateway](../concepts/zero-trust-credential-gateway.md) — the NetworkPolicies and AuthorizationPolicies it renders.
 - [Fork](../entities/fork.md) · [Run](../entities/run.md) — the two ephemeral Agent-derived CRs it reconciles.
+- [observability](../concepts/observability.md) — the telemetry collector egress chain it renders into each gateway.

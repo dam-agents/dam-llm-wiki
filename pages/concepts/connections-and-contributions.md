@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/connections.md, docs/architecture/persistence.md, packages/api-server-api/src/modules/connections/providers.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts, packages/api-server/src/modules/agents/infrastructure/agent-env-repository.ts, packages/api-server/src/modules/connections/domain/gitconfig-contribution.ts, packages/api-server/src/modules/connections/infrastructure/github-identity.ts, packages/api-server/src/modules/connections/services/oauth-flow.ts]
-updated: 2026-06-26
+updated: 2026-07-01
 ---
 
 # Connections & contributions

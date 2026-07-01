@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: e54e8f1869e16b5ccd6968dd68ce7ce78d215891
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [packages/db/src/schema.ts, packages/db/src/migrate.ts, packages/db/src/client.ts, packages/db/README.md, docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, docs/notes/postgres-role-operations.md, deploy/helm/platform/templates/postgres.yaml, deploy/helm/platform/templates/postgres-migrate-roles.yaml, deploy/helm/platform/values.yaml]
-updated: 2026-06-27
+updated: 2026-07-01
 ---
 
 # db

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go, packages/controller/pkg/reconciler/resources.go]
-updated: 2026-06-26
+updated: 2026-07-01
 ---
 
 # Agent
@@ -27,7 +27,14 @@ A single `Agent` custom resource (`agent-platform.ai/v1`,
   now lives in Postgres `agent_env` and reaches the pod over the runtime channel,
   not the pod spec — the controller projects only chart-level platform defaults
   into pod env (`packages/controller/pkg/reconciler/resources.go:113-114 @d507c05`).
-  See [agent-lifecycle](../concepts/agent-lifecycle.md).
+  See [agent-lifecycle](../concepts/agent-lifecycle.md). An optional
+  `spec.hibernationTimeout` (`*metav1.Duration`) overrides the chart-wide idle
+  timeout for this Agent — omitted inherits the default, a positive value sets a
+  per-agent idle window, and `"0s"` disables hibernation entirely
+  ([#1373](https://github.com/dam-agents/dam/pull/1373),
+  `packages/controller/api/v1/agent_types.go:38-40 @b68af4a`); the UI writes it in
+  minutes and both controller and api-server resolve the *effective* value. See
+  [the idle decision](../concepts/agent-lifecycle.md#the-idle-decision).
 - **`status`** (controller-written) — observed conditions (`Ready`,
   `AgentPodReady`, `GatewayPodReady`, `Reconciled`).
 - **annotations** — high-frequency signals: `last-activity`, active-session

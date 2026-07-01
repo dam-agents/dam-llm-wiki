@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
-files: [docs/architecture/security-and-credentials.md, docs/architecture.md, packages/api-server/src/apps/harness-api-server/harness-run-relay.ts]
-updated: 2026-06-30
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+files: [docs/architecture/security-and-credentials.md, docs/architecture.md, packages/api-server/src/apps/harness-api-server/harness-run-relay.ts, packages/controller/pkg/reconciler/envoy.go, packages/controller/pkg/config/config.go]
+updated: 2026-07-01
 ---
 
 # Zero-trust credential gateway
@@ -72,6 +72,25 @@ See [HITL approvals](hitl-approvals.md).
   bounded by an api-server **per-agent concurrent-run cap (16)**, not
   structurally (`docs/architecture/security-and-credentials.md @70c53ae`,
   `packages/api-server/src/apps/harness-api-server/harness-run-relay.ts:11-20 @70c53ae`).
+
+## Telemetry egress (trusted attribution)
+
+When the optional [telemetry backend](observability.md) is enabled, the gateway
+gains one more L7 chain — but it injects **identity, not credentials**. It
+MITM-terminates agent OTLP on the collector SNI and stamps a trusted
+`x-platform-agent-id` header with `OVERWRITE_IF_EXISTS_OR_ADD`, replacing anything
+the agent set; the value is fixed in this gateway's controller-rendered config, so
+an agent can never forge another's identity
+(`packages/controller/pkg/reconciler/envoy.go:855-909 @b68af4a`). No ext_authz
+(platform-internal traffic, not user egress) and no credential injection; the
+collector host is added to the leaf SAN so the agent's TLS validates the intercept
+cert. The chain renders only when the backend is configured (`TelemetryEnabled()`)
+and the collector host doesn't collide with a credentialed chain host
+(`packages/controller/pkg/reconciler/envoy.go:1165 @b68af4a`,
+`packages/controller/pkg/config/config.go:265-270 @b68af4a`). A
+[Fork](../entities/fork.md)'s telemetry carries the *fork's own* instance ID, even
+though its gateway dials the parent's ext-authz Service
+(`packages/controller/pkg/reconciler/envoy.go:1131-1144 @b68af4a`).
 
 ## Credential storage notes
 

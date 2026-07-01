@@ -35,6 +35,7 @@ for running agent harnesses headless in the cloud.
 - [Agent lifecycle](pages/concepts/agent-lifecycle.md) — create → wake → trigger → hibernate → delete.
 - [Zero-trust credential gateway](pages/concepts/zero-trust-credential-gateway.md) — the defining security model.
 - [Persistence substrates](pages/concepts/persistence-substrates.md) — Postgres vs. custom resources vs. per-agent PVCs.
+- [Observability (agent telemetry)](pages/concepts/observability.md) — optional bundled ClickStack backend: OTel collector + columnar store + exploration UI, gated by the mesh, with gateway-stamped trusted attribution.
 - [ACP (Agent Client Protocol)](pages/concepts/agent-client-protocol.md) — the JSON-RPC relay contract for live agent I/O.
 - [HITL approvals & egress rules](pages/concepts/hitl-approvals.md) — the human-in-the-loop gate on egress and tool calls.
 - [Connections & contributions](pages/concepts/connections-and-contributions.md) — the runtime channel, outbox, and apply state machine.

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, packages/controller/api/v1/run_types.go]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # Persistence substrates
@@ -19,6 +19,12 @@ agent (`docs/architecture/persistence.md @662ebe4`):
 The controller never touches Postgres; the api-server never writes `status`. The
 agent's only durable surface is the PVC — everything the platform knows *about*
 the agent is mirrored onto Postgres or the CR, never written by the agent.
+
+The optional agent-telemetry backend adds a **fourth durable substrate**, outside
+this split — the ClickStack telemetry store (and the exploration UI's app state),
+on operator-managed volumes that neither the agent nor the controller touches. It
+exists only when that subsystem is enabled. See
+[observability](observability.md) (`docs/architecture/persistence.md @b68af4a`).
 
 Within the **bundled** Postgres itself there is a further credential boundary:
 the api-server and Keycloak each connect as a `NOSUPERUSER` role

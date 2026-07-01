@@ -2,7 +2,7 @@
 source: dam-agents/dam
 commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
 files: [docs/architecture/platform-topology.md, docs/architecture.md]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # Platform topology
@@ -22,6 +22,12 @@ PVCs, which is what makes scale-to-zero hibernation safe. The controller and
 api-server **never talk directly** — they coordinate through the K8s API using
 the `spec`/`status` subresource split so writes never contend.
 
+An **optional fifth, bundled subsystem** — the ClickStack agent-telemetry backend
+(a platform-owned OTel collector + ClickHouse store + HyperDX UI) — installs with
+the chart when `clickstack.enabled`, off by default. Agents export OTLP through
+their paired gateway to the collector, which the mesh gates to platform
+namespaces only. See [observability](observability.md).
+
 ## Key edges
 
 | Edge | Protocol | Purpose |
@@ -32,6 +38,7 @@ the `spec`/`status` subresource split so writes never contend.
 | cli → api-server | tRPC + WS frames | Agent resolution, auth, `dam chat` attach |
 | api-server → agent-runtime | WebSocket (ACP) / HTTP (tRPC) | Chat relay (one hop) + in-pod file ops |
 | agent-runtime → api-server (harness port, via gateway) | HTTP | MCP tools, runtime-channel `hello` |
+| agent → telemetry collector (via gateway) | OTLP/HTTP | Optional: OpenTelemetry export, MITM-terminated + agent-id-stamped at the gateway ([observability](observability.md)) |
 | agent (`dam-run`) → api-server (harness port, via gateway) | WebSocket (exec frames) | Ephemeral-executor stdio relay: the api-server stands up a [Run](../entities/run.md) pod and relays to its `/api/exec` |
 | gateway → api-server | gRPC | HITL ext_authz Check |
 | controller → K8s API | watch / status writes | Reconciliation |

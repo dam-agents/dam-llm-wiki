@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: e54e8f1869e16b5ccd6968dd68ce7ce78d215891
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [packages/ui/src/, docs/architecture/platform-topology.md]
-updated: 2026-06-27
+updated: 2026-07-01
 ---
 
 # ui
@@ -30,6 +30,18 @@ Feature modules under `src/modules/` mirror the api-server's bounded contexts
 > The UI surfaces the **Agent** domain object under the user-facing name
 > **Sandbox** (`docs/ubiquitous-language.md @4a48ae2`); "Agent" remains the
 > code/domain term — hence both `agents/` and `sandboxes/` modules exist.
+
+The sandbox **settings** view exposes the per-agent hibernation timeout as a
+minutes field (`0` = never hibernate), showing the *effective* value so an Agent
+with no override displays the inherited default rather than a blank
+([#1373](https://github.com/dam-agents/dam/pull/1373),
+`packages/ui/src/modules/sandboxes/components/hibernation-timeout-field.tsx:14-45 @b68af4a`,
+`packages/ui/src/modules/sandboxes/views/sandbox-settings-view.tsx:108-120 @b68af4a`);
+see [the idle decision](../concepts/agent-lifecycle.md#the-idle-decision).
+Form primitives are being converged onto a shared `FormField` and unified
+`select`/`textarea` components under `components/ui/`
+([#2130](https://github.com/dam-agents/dam/pull/2130),
+[#2115](https://github.com/dam-agents/dam/pull/2115)).
 
 ## See also
 

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
 files: [packages/agents/, packages/platform-base/, docs/architecture/agent-lifecycle.md]
-updated: 2026-06-30
+updated: 2026-07-01
 ---
 
 # agents — harness container images
@@ -21,7 +21,7 @@ which [agent-runtime](agent-runtime.md) treats the harness as opaque
 
 | Dir | Harness | Notes |
 | --- | --- | --- |
-| `claude-code/` | Claude Code | Ships a **pod-service** local model gateway (`model-gateway.mjs`/`.sh`) to front Anthropic-compatible upstreams; `harness-chat.sh`, `harness-terminal.sh`, `pod-service.sh` (`packages/agents/claude-code/ @662ebe4`). |
+| `claude-code/` | Claude Code | Ships a **pod-service** local model gateway (`model-gateway.mjs`/`.sh`) to front Anthropic-compatible upstreams; `harness-chat.sh`, `harness-terminal.sh`, `pod-service.sh` (`packages/agents/claude-code/ @662ebe4`). The **only** harness wired for OpenTelemetry export (via `CLAUDE_CODE_ENABLE_TELEMETRY` + `OTEL_*` env from the chart when a template opts in) — see [observability](../concepts/observability.md). |
 | `codex/` | Codex | `system-config.toml`, harness scripts (`packages/agents/codex/ @662ebe4`). |
 | `pi-agent/` | Pi Agent | Multi-provider; ships a `pi-dynamic-providers` extension (`packages/agents/pi-agent/ @662ebe4`). |
 | `bob/` | Bob | IBM enterprise harness; includes an ACP shim `bob-acp-shim.mjs` (`packages/agents/bob/ @662ebe4`). |
@@ -62,7 +62,17 @@ persistent `$HOME` so a hibernation-killed run **resumes on the next turn**
 
 It maps onto the platform's keyless model: Nous's Claude SDK calls and `git`/`gh`
 authenticate through the [Envoy credential gateway](../entities/envoy-gateway.md)
-— the pod holds no credentials. A stdlib-only
+— the pod holds no credentials. Nous's **gate summaries**, however, are
+OpenAI-format LLM calls, and those bypassed the gateway until
+[#2117](https://github.com/dam-agents/dam/pull/2117) (`@9ddc474`): a
+`nous-model-gateway.sh` override wraps the claude-code base shim (renamed
+`model-gateway-base.sh` at build) so that when `ANTHROPIC_BASE_URL` points at the
+in-pod gateway, an unset or LiteLLM `OPENAI_BASE_URL` is repointed to match —
+otherwise the summaries fail against the raw LiteLLM URL (intercept-CA TLS + a
+model-id 403). It is sourced by `harness-chat`, `harness-terminal`, and the SSH
+login profile, so the whole shell env is fixed
+(`packages/agents/nous/nous-model-gateway.sh:1-17 @b68af4a`,
+`packages/agents/nous/Dockerfile:47-51 @b68af4a`). A stdlib-only
 [`nous-channel-bridge.py`](https://github.com/dam-agents/dam/blob/main/packages/agents/nous/nous-channel-bridge.py)
 relays each campaign DESIGN/FINDINGS gate summary into the agent's bound
 Slack/Telegram thread via Nous's own `channels:` webhook feature pointed at
