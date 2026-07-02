@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/api-server/, packages/api-server-api/, deploy/helm/platform/templates/apiserver/rbac.yaml, docs/architecture/platform-topology.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # api-server
@@ -43,8 +43,10 @@ Domain modules, each its own bounded context
 | `channels` | Slack/Telegram adapters + inbound relay. See [channels](../concepts/platform-topology.md). |
 | `schedules` | RRULE/cron schedule loop, quiet hours, firing. See [Schedule](../entities/schedule.md). |
 | `approvals`, `egress-rules` | HITL ext_authz gate and persistent egress rules. See [HITL approvals](../concepts/hitl-approvals.md). |
-| `connections`, `runtime-delivery` | Unified connection/contribution model + the transactional outbox worker. See [connections](../concepts/connections-and-contributions.md). |
-| `secrets`, `secret-store` | K8s-Secret credential storage (owner-labelled), GitHub PAT pairs. |
+| `connections`, `runtime-delivery` | Unified connection/contribution model (the **sole** credential model as of [#2200](https://github.com/dam-agents/dam/pull/2200)) + the transactional outbox worker. See [connections](../concepts/connections-and-contributions.md). |
+| `secret-store` | K8s-Secret write/read primitive; Connections store each credential's value + baked SDS files here (`packages/api-server/src/modules/connections/services/connections-service.ts:368-388 @b62d21c`). The standalone `secrets` module was retired in [#2200](https://github.com/dam-agents/dam/pull/2200). |
+| `harness-config` | Per-agent model/mode/config: serves the harness's advertised catalog + supported flag (`status`), applies a change as a one-shot `harness-config` runtime event via the outbox (`set`), and polls whole-outbox settle (`settled`) (`packages/api-server/src/modules/harness-config/services/harness-config-service.ts:27-58 @b62d21c`). See [connections](../concepts/connections-and-contributions.md). |
+| `experiments`, `artifacts` | Race competing R&D harnesses against one goal: composes/launches per-Arm Trials, attributes and records inbound Runs from the two MCP tools, runs the completion + liveness sweep, and serves Candidate downloads; `artifacts` stores each Candidate as a capped `bytea` blob in Postgres. See [Experiments](../concepts/experiments.md). |
 | `skills`, `repos` | Skill source catalog, install/publish orchestration, git repos. |
 | `audit`, `usage` | Structured audit trail and append-only usage tracking. |
 | `api-keys`, `terms` | Headless API keys; Terms-of-Use acceptance gate. |
@@ -61,6 +63,29 @@ executors borrow the parent's gateway identity rather than getting their own SA
 `packages/api-server/src/apps/harness-api-server/harness-run-relay.ts:11-20 @70c53ae`). The wire contracts (tRPC
 routers, CRD types, harness router) live in the sibling `api-server-api`
 package (`packages/api-server-api/src/ @4a48ae2`).
+
+## Boot-time secrets → connections migration
+
+On startup `index.ts` runs a one-time, idempotent, self-disarming migration that
+drains legacy provider/PAT K8s Secrets into [Connections](../concepts/connections-and-contributions.md)
+and flips each agent's grants, awaited before serving and retried on a 60 s timer
+up to 10 times (`packages/api-server/src/index.ts:216-240 @b62d21c`). It does
+**not** delete the drained legacy Secret (deferred to a later sweep) to avoid
+wedging a mid-rolling gateway pod
+(`packages/api-server/src/modules/connections/migration/secrets-to-connections.ts:16-27 @b62d21c`).
+Note the code contradicts the accepted design statement of a "clean break with no
+migration" — flagged for [lint](../concepts/connections-and-contributions.md#secrets--connections-cutover-2200),
+not reconciled.
+
+## Background loops
+
+Besides the runtime-delivery outbox worker, the api-server runs the
+[Experiments](../concepts/experiments.md) **Inactivity Deadline sweep** — a
+multi-replica-safe background reaper that marks a quiet running Arm `failed`,
+started at boot at the inactivity-window cadence capped at 5 minutes with a
+randomized start offset
+(`packages/api-server/src/index.ts:540-547 @b62d21c`,
+`packages/api-server/src/modules/experiments/services/experiment-arm-sweeper.ts:62-104 @b62d21c`).
 
 ## See also
 

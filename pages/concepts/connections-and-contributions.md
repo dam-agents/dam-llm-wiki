@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/connections.md, docs/architecture/persistence.md, packages/api-server-api/src/modules/connections/providers.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts, packages/api-server/src/modules/agents/infrastructure/agent-env-repository.ts, packages/api-server/src/modules/connections/domain/gitconfig-contribution.ts, packages/api-server/src/modules/connections/infrastructure/github-identity.ts, packages/api-server/src/modules/connections/services/oauth-flow.ts]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/ubiquitous-language.md, docs/architecture/agent-lifecycle.md, docs/architecture/connections.md, docs/architecture/persistence.md, packages/api-server-api/src/modules/connections/providers.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts, packages/api-server/src/modules/agents/infrastructure/agent-env-repository.ts, packages/api-server/src/modules/connections/domain/gitconfig-contribution.ts, packages/api-server/src/modules/connections/domain/catalog.ts, packages/api-server/src/modules/connections/domain/connection-sds.ts, packages/api-server/src/modules/connections/services/connections-service.ts, packages/api-server/src/modules/connections/migration/secrets-to-connections.ts, packages/api-server/src/modules/connections/infrastructure/github-identity.ts, packages/api-server/src/modules/connections/services/oauth-flow.ts, packages/agent-runtime/src/modules/runtime-channel/manifest.ts, packages/agent-runtime/src/modules/runtime-channel/dispatcher.ts, packages/agent-runtime/src/modules/runtime-channel/event-dispatcher.ts, packages/agent-runtime/src/modules/runtime-channel/compose.ts, packages/agent-runtime/src/modules/runtime-channel/drivers/harness-config-plugin.ts, packages/agent-runtime/src/modules/runtime-channel/infrastructure/model-discovery.ts, packages/agents/pi-agent/runtime-manifest.yaml, packages/platform-base/runtime-manifest.yaml]
+updated: 2026-07-02
 ---
 
 # Connections & contributions
@@ -13,10 +13,10 @@ delivers declarative configuration and one-shot events to a running
 **outbox + worker** (`docs/ubiquitous-language.md @4a48ae2`,
 `docs/architecture/agent-lifecycle.md @4a48ae2`).
 
-> The unified Connection/Contribution model below is **proposed, in-flight
-> design** per the glossary — structure (subtype axes, push channel, capability
-> negotiation) is still being grilled (`docs/ubiquitous-language.md @4a48ae2`).
-> It generalises today's split between `OAuthAppDescriptor` and `ProviderPreset`.
+As of [#2200](https://github.com/dam-agents/dam/pull/2200) (`@b62d21c`) the
+Connection/Contribution model is the **sole, shipped credential model** — the
+standalone `secrets` module and the parallel `OAuthAppDescriptor`/`ProviderPreset`
+registries have been retired into it (see [the cutover](#secrets--connections-cutover-2200)).
 
 ## Model
 
@@ -34,6 +34,18 @@ delivers declarative configuration and one-shot events to a running
   (`packages/agent-runtime-api/src/modules/runtime/types.ts:61 @380cb06`).
 - **AuthConfig** — `oauth` | `header` | `none`; `header` covers any
   header-injected static credential, distinguished by `headerName` + `valueFormat`.
+
+### Storage
+
+A Connection is one Postgres `connections` row (`id, owner,
+templateId, name, inputs, auth, contributions`) plus one per-Connection K8s Secret
+holding the raw `value` and the baked `host-*.sds.yaml` SDS files the
+[Envoy gateway](zero-trust-credential-gateway.md) reads
+(`packages/api-server/src/modules/connections/services/connections-service.ts:368-388 @b62d21c`,
+`packages/api-server/src/modules/connections/domain/connection-sds.ts:24-53 @b62d21c`).
+The code-declared template catalog (`buildCatalog`) covers Anthropic, OpenAI, IBM
+LiteLLM, Bob, Modal, GitHub OAuth/PAT/Enterprise, Slack, and ~16 Google services
+(`packages/api-server/src/modules/connections/domain/catalog.ts:740 @b62d21c`).
 
 ## The `env` contribution — three sources, user wins
 
@@ -78,6 +90,33 @@ this new `connections/providers` module. The template↔provider relation
 (`templateIdForProvider`, `providerTypeForTemplateId`) is derived from each
 preset's `modes[].templateId` rather than hand-maintained
 (`packages/api-server-api/src/modules/connections/providers.ts:203 @4a48ae2`).
+
+## Secrets → Connections cutover (#2200)
+
+[#2200](https://github.com/dam-agents/dam/pull/2200) (`@b62d21c`) deleted the
+standalone `secrets` module across api-server, api-server-api, ui, and cli
+(`k8s-secrets-port`, `secrets-service`, the GitHub-PAT grouping, the UI
+`connections-picker`/`add-agent-dialog`, the secrets tRPC router). Every credential
+is now a [Connection](#storage). The SDS YAML the gateway reads is produced by
+`connection-sds.ts` (`buildConnectionSdsFields`), replacing the deleted
+`secrets/infrastructure/k8s-secrets-port.ts`
+(`packages/api-server/src/modules/connections/domain/connection-sds.ts:24-53 @b62d21c`).
+A one-time, idempotent, boot-time migration drains legacy K8s Secrets into
+Connections and flips agent grants (see
+[api-server → boot migration](../sources/api-server.md#boot-time-secrets--connections-migration)),
+with an inert `legacy-secret-env-source` safety net for the upgrade window
+(`packages/api-server/src/modules/connections/migration/secrets-to-connections.ts:16-27 @b62d21c`).
+This cutover touched **no Postgres schema** — the `connections`/`connection_grants`
+tables predate it.
+
+> **Flagged for lint (contradiction, not reconciled).** The same PR marks ADR-051
+> "Accepted" declaring a *clean break with no migration choreography*, yet the
+> shipped code performs a full staged boot-time migration
+> (`migrateSecretsToConnections`, wired in
+> `packages/api-server/src/index.ts:216-240 @b62d21c`). Both the ADR and the
+> security doc were touched in the same commit; code is ground truth per this
+> wiki's contradiction policy, so the wiki follows the code and surfaces the
+> tension rather than flattening it.
 
 ## GitHub identity → git commit attribution
 
@@ -128,6 +167,63 @@ bumped on every contribution edit or event insert. Key states:
 A pod's `hello` is **presence-only** — it signals the worker to dispatch; the
 worker dispatches only to a `Ready` agent, so an apply never targets a pod that's
 down or rolling (`docs/architecture/agent-lifecycle.md @4a48ae2`).
+
+## Agent-side: the unified `drivers:` manifest (ADR-072)
+
+On the pod, the runtime channel dispatches every contribution and event through a
+per-harness `drivers:` map. As of
+[#1270](https://github.com/dam-agents/dam/pull/1270) (`@b62d21c`) that map is
+**unified**: every kind — contribution *or* event — is a driver entry resolved the
+same way through the plugin registry. The event path is no longer a hardcoded
+switch; event kinds bind through `plugin.bindEvent` exactly as contribution kinds
+bind through `plugin.bind`
+(`packages/agent-runtime/src/modules/runtime-channel/event-dispatcher.ts:37-55 @b62d21c`,
+`packages/agent-runtime/src/modules/runtime-channel/dispatcher.ts:43-63 @b62d21c`),
+both fed from one resolved binding map
+(`packages/agent-runtime/src/modules/runtime-channel/compose.ts:106-115 @b62d21c`).
+
+- **Built-ins are on by default.** A runtime-owned table (`BUILTIN_DRIVERS`)
+  registers each built-in kind with a default binding; a manifest entry is needed
+  only to *configure* a kind, *override* its `impl`, or *disable* it with `false`.
+  `resolveDrivers` = default-on built-ins ∪ manifest declarations ∖ disables,
+  throwing on an unknown kind
+  (`packages/agent-runtime/src/modules/runtime-channel/manifest.ts:105-164 @b62d21c`).
+- **`impl` defaults to the kind name**; the one built-in whose impl differs is
+  `schedule-reset`, bound to impl `trigger` — the historical mapping preserved so
+  older manifests still resolve
+  (`packages/agent-runtime/src/modules/runtime-channel/manifest.ts:124,138-140 @b62d21c`).
+- **Capabilities are derived, not declared** — advertised contribution kinds come
+  from the resolved drivers (defaults ∪ declared ∖ opted-out); event kinds are
+  advertised in full because a kind with no active driver simply no-ops at dispatch
+  (`packages/agent-runtime/src/modules/runtime-channel/compose.ts:122-127 @b62d21c`).
+  `platform-base`'s manifest declares `drivers: {}` — every built-in on by default;
+  pi-agent drops its four inherited driver entries and declares only its
+  harness-config (`packages/agents/pi-agent/runtime-manifest.yaml:7-40 @b62d21c`).
+
+### harness-config — per-agent model/mode/config
+
+**harness-config** is a driver (default-*off* until a manifest binds it, since it
+needs a per-harness config) that carries two capabilities beyond a single event
+handler: it **presents a catalog** (advertised on `hello`) and **answers a live
+current-config read**
+(`packages/agent-runtime/src/modules/runtime-channel/drivers/harness-config-plugin.ts:26-34 @b62d21c`).
+On a `harness-config` event it performs a **one-shot key-targeted write** into the
+harness's own config file (claude-code `~/.claude/settings.json`, pi
+`~/.pi/agent/settings.json`) and **never re-asserts it** — like `workspace-seed`,
+the file stays the user's to edit
+(`packages/agent-runtime/src/modules/runtime-channel/drivers/harness-config-plugin.ts:48-102 @b62d21c`).
+It is therefore **not persisted state**: the change rides as a one-shot outbox
+event (30-day TTL), not part of the reconciled `applyState` snapshot, so a running
+session keeps its startup settings and *new* sessions pick up the change
+(`packages/api-server/src/modules/harness-config/services/harness-config-service.ts:42-57 @b62d21c`).
+When a manifest declares `modelDiscovery.urlEnv` the read enumerates models live
+from the provider's OpenAI-style `/v1/models` endpoint over the agent's egress,
+falling back to the static catalog on any failure
+(`packages/agent-runtime/src/modules/runtime-channel/infrastructure/model-discovery.ts:20-64 @b62d21c`).
+The user-facing surface is the session Config panel's Model settings (see
+[ui](../sources/ui.md)); the [api-server](../sources/api-server.md) `harness-config`
+module inserts the event, while the live current-config read is served by
+agent-runtime directly.
 
 ## See also
 

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, docs/architecture/agent-lifecycle.md, packages/api-server/src/modules/agents/services/agents-service.ts]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, docs/architecture/agent-lifecycle.md, packages/api-server/src/modules/agents/services/agents-service.ts, packages/api-server-api/src/modules/templates/types.ts, packages/api-server-api/src/modules/templates/schemas.ts, packages/api-server/src/modules/agents/domain/spec-assembly.ts, deploy/helm/platform/templates/agent-templates.yaml]
+updated: 2026-07-02
 ---
 
 # Template
@@ -31,6 +31,25 @@ user value wins a same-named template default)
 so **editing a Template never re-flows into a running Agent** — there is no
 "template envs" runtime layer (`docs/architecture/agent-lifecycle.md @d507c05`).
 The default Claude Code template persists the workspace and `$HOME`.
+
+## Per-template scheduling
+
+A template can override two scheduling fields (`runtimeClassName` + `nodeSelector`)
+on the agents it creates; **all other
+scheduling stays chart-wide** (ADR-073). `TemplateSpec` gains
+`runtimeClassName?: string` (overrides the chart-wide runtime class, e.g. a GPU
+Kata class; empty = inherit) and `nodeSelector?: Record<string, string>` (labels
+merged onto the chart-wide selector; empty = inherit)
+(`packages/api-server-api/src/modules/templates/types.ts:54-57 @b62d21c`,
+`packages/api-server-api/src/modules/templates/schemas.ts:56-57 @b62d21c`). At
+create time the api-server copies both from the template spec straight onto the new
+Agent's spec
+(`packages/api-server/src/modules/agents/domain/spec-assembly.ts:30-31 @b62d21c`),
+and Helm renders them into the template ConfigMap only when set
+(`deploy/helm/platform/templates/agent-templates.yaml:46-52 @b62d21c`). The
+`k-search-local` template uses this to request the cluster's GPU Kata runtime class
+and GPU node label (see [K-Search](../sources/agents.md#k-search--a-workload-harness-on-platform-base)).
+The merge-vs-replace semantics live on [Agent](agent.md#per-template-scheduling).
 
 ## See also
 

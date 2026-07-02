@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [README.md, docs/architecture.md, docs/ubiquitous-language.md, package.json, pnpm-workspace.yaml, packages/]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # dam — DAM agent platform (source overview)
@@ -36,7 +36,8 @@ The platform is four long-lived subsystems plus their shared API contracts and
 supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
 
 - [api-server](api-server.md) — the TypeScript backend: user-facing tRPC + REST,
-  the ACP relay, channels, schedules, approvals, skills, connections, usage.
+  the ACP relay, channels, schedules, approvals, skills, connections, usage, and
+  the internal [Experiments](../concepts/experiments.md) subsystem.
 - [controller](controller.md) — the Go Kubernetes operator reconciling the
   `Agent`, `Fork`, and `Run` custom resources into pods, services, and policies.
 - [agent-runtime](agent-runtime.md) — the per-agent pod process: ACP WebSocket
@@ -44,8 +45,10 @@ supporting packages (`docs/architecture/platform-topology.md @4a48ae2`):
 - [ui](ui.md) — the React + Vite single-page app served by the api-server.
 - [cli](cli.md) — the `dam` command-line client (npm-distributed Node package).
 - [agents](agents.md) — per-harness container images (claude-code, codex,
-  pi-agent, bob, nous, openevolve) built on a shared `platform-base` (nous and
-  openevolve layer on the claude-code image rather than the base directly).
+  pi-agent, bob, nous, openevolve, k-search) built on a shared `platform-base`
+  (nous and openevolve layer on the claude-code image rather than the base
+  directly; **k-search** is a GPU kernel-optimization *workload* image on
+  `platform-base`, not a chat harness).
 - [db](db.md) — the Postgres schema, migrations, and client used by api-server.
 - `api-server-api` / `agent-runtime-api` — shared tRPC routers and types that
   define the wire contracts between the UI/CLI, api-server, and agent pods.

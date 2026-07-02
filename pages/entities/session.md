@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/agent-lifecycle.md, docs/ubiquitous-language.md, packages/agent-runtime/src/modules/acp/infrastructure/session-metadata-store.ts, packages/agent-runtime/src/modules/acp/services/acp-runtime.ts]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Session
@@ -58,7 +58,9 @@ Mode (chat ↔ terminal) is **metadata-only** — a UI hint, persisted over
 `session/resume` with no harness effect and no cross-client broadcast.
 [Schedule](schedule.md) sessions are typed (`schedule_cron`): *fresh* schedules
 open a new session per fire; *continuous* schedules resume one session across
-fires.
+fires. An [Experiment](../concepts/experiments.md) Trial is likewise a typed
+session, its metadata carrying the optional `experimentId` that scopes the Arm's
+loop (`packages/agent-runtime/src/modules/acp/infrastructure/session-metadata-store.ts:8 @b62d21c`).
 
 ## See also
 

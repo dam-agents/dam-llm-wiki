@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/cli/src/, docs/architecture/cli.md, docs/ubiquitous-language.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # cli (`dam`)
@@ -49,6 +49,16 @@ agent's `allowedUserEmails` allow-list that gates who may drive it
 precheck** that refuses early if the provider isn't enabled, rather than
 round-tripping a server `PRECONDITION_FAILED`
 (`packages/cli/src/modules/channel/commands/precheck.ts:21-34 @380cb06`).
+
+### Credentials via Connections only (#2200)
+
+As of the [secrets→connections cutover](../concepts/connections-and-contributions.md#secrets--connections-cutover-2200)
+([#2200](https://github.com/dam-agents/dam/pull/2200)) the `dam` CLI no longer
+dual-reads legacy secrets: `create-interactive` grants credentials only through
+`connections.setAgentConnections`, and a GitHub PAT is a single `github-pat`
+connection rather than a client-side-grouped secret pair — the `group-github-pats`
+helper and its test were deleted
+(`packages/cli/src/modules/agent/commands/create-interactive.ts @b62d21c`).
 
 ### Setup-time connection config inputs
 

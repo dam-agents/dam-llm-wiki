@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/e2e/playwright/playwright.config.ts, packages/e2e/playwright/src/config.ts, packages/e2e/playwright/src/lib/auth.ts, packages/e2e/playwright/src/lib/api-client.ts, packages/e2e/playwright/src/lib/agents.ts, packages/e2e/playwright/src/lib/connections.ts, packages/e2e/playwright/src/lib/fixtures.ts, packages/e2e/playwright/src/tests/01-auth.spec.ts, packages/e2e/playwright/src/tests/05-injection.spec.ts, packages/e2e/playwright/src/tests/06-api-keys.spec.ts, packages/e2e/playwright/src/tests/07-slack.spec.ts, packages/e2e/playwright/src/tests/08-session-delete.spec.ts, packages/e2e/playwright/src/tests/09-user-env.spec.ts, packages/e2e/agents/mock/src/main.ts, packages/api-server/src/modules/e2e/services/e2e-service.ts, tasks.toml]
-updated: 2026-06-26
+updated: 2026-07-02
 ---
 
 # E2E testing

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/db/src/schema.ts, packages/db/src/migrate.ts, packages/db/src/client.ts, packages/db/README.md, docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, docs/notes/postgres-role-operations.md, deploy/helm/platform/templates/postgres.yaml, deploy/helm/platform/templates/postgres-migrate-roles.yaml, deploy/helm/platform/values.yaml]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # db
@@ -27,6 +27,24 @@ The companion migration `0004_open_mariko_yashida.sql` adds a nullable `path`
 column to both `skill_sources` and `agent_skills` for the
 [skill-source subdir](../concepts/skill-resolution.md) feature
 (`schema.ts:161 @d507c05`, `:185 @d507c05`).
+
+The **[Experiments](../concepts/experiments.md)** subsystem
+([#2033](https://github.com/dam-agents/dam/pull/2033)) adds four tables across
+migrations `0005`–`0009`: `experiments` (owner-scoped, `owner+name` unique),
+`experiment_arms` (PK `(experiment_id, agent_id)`), and the append-only
+`experiment_runs` Run Ledger (`run_number` unique per arm, `score` as opaque
+`jsonb`) all land in `0005` (`packages/db/src/schema.ts:474-549 @b62d21c`);
+`run_artifacts`, the Candidate blob store holding content inline as `bytea`, lands
+in `0006` (`packages/db/src/schema.ts:560-572 @b62d21c`). Three follow-ups reshape
+the arm model: `0007` collapses `experiments` to a single `prompt` column, `0008`
+adds per-arm `status` + `last_activity_at` (the liveness clock the inactivity sweep
+reads, with a partial index on running arms), and `0009` replaces `arm_spec` with
+`arm_variation` (`packages/db/src/schema.ts:498-524 @b62d21c`).
+
+The [secrets→connections cutover](../concepts/connections-and-contributions.md#secrets--connections-cutover-2200)
+([#2200](https://github.com/dam-agents/dam/pull/2200)) touched **no Postgres
+schema** — legacy secrets were K8s Secrets, and the `connections`/`connection_grants`
+tables predate it (`packages/db/src/schema.ts:322,348 @b62d21c`).
 
 ## Layout (`packages/db/src/`)
 

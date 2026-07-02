@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/platform-topology.md, docs/architecture.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Platform topology

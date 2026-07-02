@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/architecture/security-and-credentials.md, docs/architecture.md, packages/api-server/src/apps/harness-api-server/harness-run-relay.ts, packages/controller/pkg/reconciler/envoy.go, packages/controller/pkg/config/config.go]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/architecture/security-and-credentials.md, docs/architecture.md, packages/api-server/src/apps/harness-api-server/harness-run-relay.ts, packages/controller/pkg/reconciler/envoy.go, packages/controller/pkg/reconciler/envoy_test.go, packages/controller/pkg/config/config.go, packages/api-server/src/modules/connections/domain/catalog.ts, packages/api-server/src/modules/connections/domain/connection-sds.ts]
+updated: 2026-07-02
 ---
 
 # Zero-trust credential gateway
@@ -92,15 +92,52 @@ and the collector host doesn't collide with a credentialed chain host
 though its gateway dials the parent's ext-authz Service
 (`packages/controller/pkg/reconciler/envoy.go:1131-1144 @b68af4a`).
 
+## gRPC credential injection (HTTP/2 opt-in)
+
+Credential injection was HTTP/1.1-only until a per-host **HTTP/2 opt-in** let it
+cover a gRPC request stream (added for Modal, used by the
+[K-Search](../sources/agents.md#k-search--a-workload-harness-on-platform-base) GPU
+workload; ADR-072). A host's terminating chain opts in two ways, both setting the
+chain's `HTTP2` flag: a non-connection Secret carries the
+`agent-platform.ai/injection-http2: "true"` annotation, or a connection Secret's
+`injection-hosts` entry sets `"http2": true`; a host's bucket is marked `http2` if
+*any* contributing entry opts in
+(`packages/controller/pkg/reconciler/envoy.go:46,299,409-411 @b62d21c`).
+
+When a chain is HTTP/2 the controller renders two extra pieces and **REST chains
+stay byte-for-byte unchanged**: downstream, the terminate chain advertises
+`alpn_protocols: [h2, http/1.1]` so the agent's client negotiates HTTP/2 over the
+MITM leaf cert; upstream, the cluster mirrors the negotiated protocol via
+`HttpProtocolOptions.use_downstream_protocol_config` so Envoy forwards h2 and
+credential injection lands on the gRPC stream
+(`packages/controller/pkg/reconciler/envoy.go:706-710,1069-1080 @b62d21c`). Tests
+pin that a REST chain contains none of this
+(`packages/controller/pkg/reconciler/envoy_test.go:853-878 @b62d21c`).
+
+**The secret still never enters the pod; only the non-secret half may.** Modal's
+gRPC auth is two headers — `x-modal-token-id` (a public id) and
+`x-modal-token-secret` (the secret). Only the secret is gateway-injected over the
+h2 chain; the pod holds a placeholder `MODAL_TOKEN_SECRET`. The token-**id** is
+non-secret and rides as a plain pod env `MODAL_TOKEN_ID`, filled from the
+connection's Token ID input
+(`packages/api-server/src/modules/connections/domain/catalog.ts:220-265 @b62d21c`).
+This carve-out is an intentional, documented narrowing of "nothing sensitive in the
+pod" — only the secret half is protected.
+
 ## Credential storage notes
 
-One K8s Secret per `(owner, connection)`. A GitHub PAT is *two* `generic`
-Secrets sharing a display name: the `api.github.com` half (`Bearer`, projects
-`GH_TOKEN`) and the `github.com` half (`Basic base64("x-access-token:"+PAT)` for
-`git clone`). A single OAuth token can inject on multiple hosts with different
-schemes from one Secret via the `injection-hosts` annotation. **Image-pull
-credentials** are a structurally separate, agent-scoped class consumed by the
-kubelet, never by Envoy.
+One K8s Secret per `(owner, connection)` (as of the
+[secrets→connections cutover](connections-and-contributions.md#secrets--connections-cutover-2200),
+produced by `connection-sds.ts` rather than the deleted `k8s-secrets-port.ts` —
+`packages/api-server/src/modules/connections/domain/connection-sds.ts:24-53 @b62d21c`).
+A GitHub PAT is now one `github-pat` Connection whose template re-bakes three host
+injections from the bare PAT into a single per-Connection Secret —
+`api.github.com` `Bearer`, `github.com` `Basic base64("x-access-token:"+PAT)` for
+`git clone`, and `raw.githubusercontent.com` `Bearer` — plus a `GH_TOKEN` env
+contribution (`packages/api-server/src/modules/connections/domain/catalog.ts:666-700 @b62d21c`).
+A single OAuth token can inject on multiple hosts with different schemes from one
+Secret via the `injection-hosts` annotation. **Image-pull credentials** are a
+structurally separate, agent-scoped class consumed by the kubelet, never by Envoy.
 
 ## See also
 

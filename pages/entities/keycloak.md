@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/security-and-credentials.md, packages/keycloak-theme/, packages/keycloak-theme/package.json, packages/keycloak-theme/tsconfig.json, package.json]
-updated: 2026-06-23
+updated: 2026-07-02
 ---
 
 # Keycloak

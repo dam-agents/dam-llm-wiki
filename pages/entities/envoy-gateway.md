@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 380cb06d1d60bca40fa703b77e13a16ec96eedf7
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/platform-topology.md, docs/architecture/security-and-credentials.md]
-updated: 2026-06-23
+updated: 2026-07-02
 ---
 
 # Envoy gateway (per-agent gateway pod)
@@ -28,6 +28,9 @@ then (`docs/architecture/security-and-credentials.md @662ebe4`):
    ([HITL approvals](../concepts/hitl-approvals.md)).
 
 SNI-miss traffic is TCP passthrough. The agent pod **never** mounts Secret bytes.
+A per-host chain can opt into **HTTP/2** so credential injection covers a gRPC
+upstream (e.g. Modal) — see
+[gRPC credential injection](../concepts/zero-trust-credential-gateway.md#grpc-credential-injection-http2-opt-in).
 
 ## Identity & network
 

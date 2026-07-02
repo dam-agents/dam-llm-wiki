@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go, packages/controller/pkg/reconciler/resources.go]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/ubiquitous-language.md, docs/architecture/persistence.md, packages/controller/api/v1/agent_types.go, packages/controller/api/v1/schema_generation.go, packages/controller/pkg/reconciler/resources.go, packages/controller/pkg/reconciler/pod_overrides.go]
+updated: 2026-07-02
 ---
 
 # Agent
@@ -34,7 +34,14 @@ A single `Agent` custom resource (`agent-platform.ai/v1`,
   ([#1373](https://github.com/dam-agents/dam/pull/1373),
   `packages/controller/api/v1/agent_types.go:38-40 @b68af4a`); the UI writes it in
   minutes and both controller and api-server resolve the *effective* value. See
-  [the idle decision](../concepts/agent-lifecycle.md#the-idle-decision).
+  [the idle decision](../concepts/agent-lifecycle.md#the-idle-decision). Two
+  optional scheduling overrides — `spec.runtimeClassName` (string) and
+  `spec.nodeSelector` (`map[string]string`), added for GPU workloads (ADR-073) —
+  let a [Template](template.md#per-template-scheduling) escape the chart-wide
+  scheduling base; empty on either means inherit
+  (`packages/controller/api/v1/agent_types.go:54-59 @b62d21c`). Adding them bumped
+  the CRD schema generation 3 → 4
+  (`packages/controller/api/v1/schema_generation.go:12-16 @b62d21c`).
 - **`status`** (controller-written) — observed conditions (`Ready`,
   `AgentPodReady`, `GatewayPodReady`, `Reconciled`).
 - **annotations** — high-frequency signals: `last-activity`, active-session
@@ -44,6 +51,22 @@ There is **no stored desired state** — running-vs-hibernated is observed statu
 derived from activity (`docs/architecture/persistence.md @662ebe4`). The
 reserved ID prefix `agent-` is minted by the controller; the api-server forbids
 Agent names beginning with it, and the CLI uses it as the ID-vs-name split.
+
+## Per-template scheduling
+
+The [controller](../sources/controller.md)'s pod builder applies scheduling in two
+ordered passes: `applyAgentBaseScheduling` first stamps the chart-wide base
+(nodeSelector, tolerations, affinity, topology spread, priorityClass,
+runtimeClassName), then `applyTemplateScheduling` layers the per-template overrides
+on top (`packages/controller/pkg/reconciler/resources.go:387-388 @b62d21c`). The
+two fields have **different merge semantics**: `runtimeClassName` **replaces** the
+chart-wide class outright when non-empty; `nodeSelector` **merges** template keys
+onto a *fresh copy* of the chart-wide selector (never mutating the shared config),
+with **template keys winning** on collision
+(`packages/controller/pkg/reconciler/pod_overrides.go:60-78 @b62d21c`). Everything
+else stays chart-only — tolerations, affinity, topology spread, priorityClass, and
+the entire security context cannot be overridden per template
+(`packages/controller/pkg/reconciler/pod_overrides.go:38-58 @b62d21c`).
 
 ## Runs as
 

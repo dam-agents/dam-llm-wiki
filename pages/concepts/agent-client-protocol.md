@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md, packages/agent-runtime/src/modules/acp/]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md, packages/agent-runtime/src/modules/acp/, packages/api-server/src/core/acp-client.ts, packages/api-server/src/config.ts]
+updated: 2026-07-02
 ---
 
 # ACP (Agent Client Protocol)
@@ -42,6 +42,23 @@ Session mode/type/`scheduleId`/`threadTs`/`createdAt` are **agent-owned
 metadata** surfaced over ACP under `_meta.platform`; switching modes persists
 over `session/resume` with no server-side side effect or cross-client broadcast
 (`docs/architecture/platform-topology.md @662ebe4`).
+
+## Turn liveness — WS heartbeat, not stream activity
+
+The relay's per-turn timeout derives from a **WebSocket ping/pong heartbeat**, not
+from application streaming ([#2214](https://github.com/dam-agents/dam/pull/2214)).
+The old 120 s inactivity timer reset only on `sessionUpdate`, so a live-but-silent
+turn — an egress-approval hold (default 1800 s), a long tool, or a slow first token
+— aborted with a spurious "timed out" while the agent kept running. Now the
+api-server pings the agent-runtime WS every 30 s and only a dead/half-open socket
+aborts, requiring `MAX_MISSED_PONGS` (2) consecutive unanswered pings (~90 s) to
+ride out a GC pause on a healthy pod
+(`packages/api-server/src/core/acp-client.ts:15-24,148 @b62d21c`). A configurable
+absolute per-turn ceiling (`acpTurnCeilingSeconds`, default 1 h) backstops a
+wedged-but-still-ponging agent, validated `>= approvalHoldSeconds` so the two timers
+cannot disagree (`packages/api-server/src/config.ts:116-122,198-202 @b62d21c`). This
+is shared across the ACP relay, Slack/Telegram channels, and forks via the
+`sendPrompt` path.
 
 ## See also
 

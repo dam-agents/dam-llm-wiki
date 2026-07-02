@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: 70c53ae1a47512cfe06c0eb2982102d899e45f5a
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/controller/main.go, packages/controller/api/v1/, packages/controller/pkg/reconciler/, packages/controller/pkg/config/config.go, docs/architecture/platform-topology.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # controller
@@ -42,6 +42,21 @@ egress chain into every gateway's Envoy bootstrap that MITM-terminates and stamp
 the trusted `x-platform-agent-id` header
 (`packages/controller/pkg/config/config.go:265-270 @b68af4a`,
 `packages/controller/pkg/reconciler/envoy.go:855-909 @b68af4a`).
+
+**Per-template scheduling** (ADR-073) flows through the pod builders as two ordered
+passes: `applyAgentBaseScheduling` stamps the chart-wide base, then
+`applyTemplateScheduling` layers per-template overrides — `runtimeClassName`
+**replaces**, `nodeSelector` **merges onto a fresh copy with template keys winning**
+(`packages/controller/pkg/reconciler/pod_overrides.go:36-78 @b62d21c`), applied by
+both the StatefulSet builder (`packages/controller/pkg/reconciler/resources.go:387-388 @b62d21c`)
+and the shared Fork/Run builder
+(`packages/controller/pkg/reconciler/ephemeral_pod.go:326-327 @b62d21c`). Adding
+`spec.runtimeClassName` + `spec.nodeSelector` bumped the Agent CRD schema generation
+3 → 4 (`packages/controller/api/v1/schema_generation.go:12-16 @b62d21c`,
+`packages/controller/api/v1/agent_types.go:54-59 @b62d21c`). The gateway's
+credential-injection chains also learned a per-host **HTTP/2 opt-in** so injection
+covers gRPC upstreams like Modal — see
+[gRPC credential injection](../concepts/zero-trust-credential-gateway.md#grpc-credential-injection-http2-opt-in).
 
 ## Three reconciled CRs
 

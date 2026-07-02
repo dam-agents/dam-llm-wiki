@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [packages/agents/, packages/platform-base/, docs/architecture/agent-lifecycle.md]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [packages/agents/, packages/platform-base/, docs/architecture/agent-lifecycle.md, deploy/helm/platform/values.yaml]
+updated: 2026-07-02
 ---
 
 # agents — harness container images
@@ -27,6 +27,7 @@ which [agent-runtime](agent-runtime.md) treats the harness as opaque
 | `bob/` | Bob | IBM enterprise harness; includes an ACP shim `bob-acp-shim.mjs` (`packages/agents/bob/ @662ebe4`). |
 | `nous/` | Nous | Hypothesis-driven experimentation agent; built **FROM** the `claude-code` image, not `platform-base` (`packages/agents/nous/ @ca1877a`). See below. |
 | `openevolve/` | OpenEvolve | Evolutionary code-optimization agent; also built **FROM** the `claude-code` image, not `platform-base` (`packages/agents/openevolve/ @a226090`). See below. |
+| `k-search/` | K-Search | GPU-kernel-optimization *workload* (not a chat agent); built **FROM `platform-base`** with a minimal ACP shim like `bob` (`packages/agents/k-search/ @b62d21c`). See below. |
 
 Each harness dir carries a `Dockerfile`, the two `harness-*.sh` scripts, a
 `runtime-manifest.yaml`/`tasks.toml`, and a seed `workspace/` (with a
@@ -78,6 +79,12 @@ relays each campaign DESIGN/FINDINGS gate summary into the agent's bound
 Slack/Telegram thread via Nous's own `channels:` webhook feature pointed at
 `127.0.0.1:8765`, calling the per-agent `send_channel_message` MCP tool — no
 external egress, no webhook secret on disk (`packages/agents/nous/README.md @ca1877a`).
+As of [#2218](https://github.com/dam-agents/dam/pull/2218) the bridge **addresses
+the bound chat explicitly**: it resolves the chatId via `describe_channel` and
+passes it to `send_channel_message`, because Nous's webhook wiring carries no
+chatId and the tool would otherwise target the last-active thread — which Telegram
+rejects outright when none is active, silently dropping every gate summary on a
+fresh campaign (`packages/agents/nous/nous-channel-bridge.py:89-98,145-149 @b62d21c`).
 That bridge depends on a build-time fix
 ([#2026](https://github.com/dam-agents/dam/pull/2026), `@ecb70c0`): Nous's
 runtime reads `campaign.channels` at every gate, but the pinned `v0.4.0` schema
@@ -144,6 +151,53 @@ same per-commit tag via `build-openevolve`) and `merge-openevolve` publishes the
 multi-arch manifest to `quay.io/dam-agents/openevolve`; the template ships
 `category: preconfigured`, `experimental: true`
 (`.github/workflows/cd.yml @e54e8f1`, `deploy/helm/platform/values.yaml @e54e8f1`).
+
+## K-Search — a workload harness on `platform-base`
+
+`k-search/` (added in [#1687](https://github.com/dam-agents/dam/pull/1687),
+`@b4261e2`) is a GPU **kernel-optimization workload**, not a conversational agent.
+Unlike Nous/OpenEvolve it builds `FROM platform-base` (`ARG BASE_IMAGE=platform-base`),
+so it inherits none of the `claude` CLI or model gateway
+(`packages/agents/k-search/Dockerfile:1-2 @b62d21c`). It clones two public repos at
+build — [K-Search](https://github.com/caoshiyi/K-Search) into `/opt/k-search` and
+KernelBench — copies KernelBench's datasets into the tree, and `uv pip`-installs
+`openai modal` + `kernelbench[gpu]` into a venv at `/opt/ksearch-venv`, patching the
+dataset source from `huggingface` to `local` at build so problems load from the
+baked-in copy — keeping Hugging Face off the platform egress allowlist
+(`packages/agents/k-search/Dockerfile:13-25 @b62d21c`,
+`packages/agents/k-search/workspace/README.md:14-18 @b62d21c`).
+
+**Harness contract via an ACP shim (like Bob).** K-Search has no native chat agent,
+so `harness-chat` execs a minimal ACP shim `ksearch-acp-shim.mjs` that keeps
+agent-runtime's required chat subprocess alive; on any prompt it ignores the text
+and spawns `ksearch-run`, streaming its output back as `agent_message_chunk`s
+(`packages/agents/k-search/harness-chat.sh:1-4 @b62d21c`,
+`packages/agents/k-search/ksearch-acp-shim.mjs:52-96 @b62d21c`). `harness-terminal`
+runs the job out of the box by exec-ing `ksearch-run`
+(`packages/agents/k-search/harness-terminal.sh:1-4 @b62d21c`). LLM calls use DAM's
+OpenAI-compatible LiteLLM env (`OPENAI_BASE_URL`/`OPENAI_API_KEY`/`OPENAI_MODEL`),
+gateway-injected — the Dockerfile bakes only a placeholder key
+(`packages/agents/k-search/ksearch-run.sh:26-29 @b62d21c`).
+
+**Two eval backends, one image.** The `k-search` template benchmarks kernels on
+**Modal cloud GPUs** (`KSEARCH_EVAL_MODE=modal`, no in-cluster GPU needed);
+`k-search-local` benchmarks on an **in-cluster NVIDIA GPU** (`KSEARCH_EVAL_MODE=local`),
+requesting `nvidia.com/gpu` and scheduling onto a GPU node via
+[per-template `runtimeClassName`+`nodeSelector`](../entities/template.md#per-template-scheduling)
+(ADR-073). Both ship `category: preconfigured`, `experimental: true` and disabled
+by default (`deploy/helm/platform/values.yaml:1001-1050 @b62d21c`).
+
+**Reaching Modal through the gateway.** Modal's client ignores `HTTPS_PROXY` on
+both transports (grpclib has no proxy support; its aiohttp blob client is built
+without `trust_env`), so DAM's proxy-only egress would drop it.
+`dam_modal_proxy_patch.py`, auto-loaded in every venv interpreter via a `.pth`
+(`packages/agents/k-search/Dockerfile:38-43 @b62d21c`), monkey-patches grpclib to
+CONNECT-tunnel through the proxy and rebuilds Modal's aiohttp session with
+`trust_env=True` (`packages/agents/k-search/dam_modal_proxy_patch.py:18-82 @b62d21c`).
+Modal auth is split: `MODAL_TOKEN_SECRET` is gateway-injected over the HTTP/2 chain
+(pod holds only a placeholder) while the non-secret `MODAL_TOKEN_ID` rides as plain
+pod env — see
+[gRPC credential injection](../concepts/zero-trust-credential-gateway.md#grpc-credential-injection-http2-opt-in).
 
 ## See also
 

@@ -15,7 +15,7 @@ for running agent harnesses headless in the cloud.
 - [agent-runtime](pages/sources/agent-runtime.md) — per-agent pod process: ACP server, terminal/SSH, runtime channel.
 - [ui](pages/sources/ui.md) — React + Vite single-page app and the only management surface.
 - [cli](pages/sources/cli.md) — the `dam` command-line client.
-- [agents](pages/sources/agents.md) — per-harness container images (claude-code, codex, pi-agent, bob).
+- [agents](pages/sources/agents.md) — per-harness container images (claude-code, codex, pi-agent, bob, nous, openevolve, k-search).
 - [db](pages/sources/db.md) — the Postgres schema, migrations, and client.
 
 ## Entities
@@ -41,3 +41,4 @@ for running agent harnesses headless in the cloud.
 - [Connections & contributions](pages/concepts/connections-and-contributions.md) — the runtime channel, outbox, and apply state machine.
 - [E2E testing](pages/concepts/e2e-testing.md) — Playwright specs driving a real k3s cluster with a scriptable mock agent.
 - [Skill resolution](pages/concepts/skill-resolution.md) — which folders DAM scans to discover/install skills from a source (`skills/`, `.claude/skills/`, `.agents/skills/`; repo root as fallback), or a single pinned subdir (`path`).
+- [Experiments](pages/concepts/experiments.md) — race competing R&D harnesses against one goal; the platform starts Arms, captures scored Runs over MCP, and presents the comparison (internal-only UI).

@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
-files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, packages/controller/api/v1/run_types.go]
-updated: 2026-07-01
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
+files: [docs/architecture/persistence.md, docs/adrs/071-postgres-role-separation.md, packages/controller/api/v1/run_types.go, packages/db/src/schema.ts, packages/api-server/src/modules/artifacts/services/artifact-service.ts, packages/api-server/src/config.ts]
+updated: 2026-07-02
 ---
 
 # Persistence substrates
@@ -19,6 +19,17 @@ agent (`docs/architecture/persistence.md @662ebe4`):
 The controller never touches Postgres; the api-server never writes `status`. The
 agent's only durable surface is the PVC — everything the platform knows *about*
 the agent is mirrored onto Postgres or the CR, never written by the agent.
+
+[Experiment](experiments.md) **Candidate** artifacts are also Postgres-resident,
+deliberately *not* on the producing agent's PVC or in object storage: stored inline
+as a capped `bytea` blob in `run_artifacts` (default 10 MiB, `MAX_ARTIFACT_BYTES`)
+so a Candidate stays downloadable while the producing Agent is hibernated — Postgres
+(with the always-on api-server as sole reader/writer) is independent of agent pods,
+whereas a PVC is only mounted while the pod runs and S3 is unreachable from an
+egress-locked agent (`packages/db/src/schema.ts:551-558 @b62d21c`,
+`packages/api-server/src/modules/artifacts/services/artifact-service.ts:23-30 @b62d21c`,
+`packages/api-server/src/config.ts:157-162 @b62d21c`). The **Run Ledger**
+(`experiment_runs`) is the append-only ledger primitive on the same substrate.
 
 The optional agent-telemetry backend adds a **fourth durable substrate**, outside
 this split — the ClickStack telemetry store (and the exploration UI's app state),

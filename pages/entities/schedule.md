@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/agent-lifecycle.md, docs/architecture/persistence.md, docs/ubiquitous-language.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Schedule

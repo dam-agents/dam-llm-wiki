@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/agent-runtime/src/, packages/agent-runtime-api/src/, docs/architecture/platform-topology.md, docs/architecture/agent-lifecycle.md]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # agent-runtime
@@ -30,7 +30,18 @@ gateway (`docs/architecture/platform-topology.md @662ebe4`).
   env so SSH gets the same egress routing as the harness.
 - **Runtime channel** — calls the api-server `hello` on boot/reconnect, accepts
   `applyState` deliveries, materializes declarative file/env contributions under
-  `$HOME`, and dispatches runtime events (schedule triggers, workspace seeding).
+  `$HOME`, and dispatches runtime events (schedule triggers, workspace seeding,
+  experiment-trigger). As of [#1270](https://github.com/dam-agents/dam/pull/1270)
+  (`@b62d21c`, ADR-072) contribution kinds **and** event kinds are unified into one
+  `drivers:` map resolved through a single plugin registry — built-ins default-on
+  from a runtime-owned table, `impl` defaulting to the kind name
+  (`packages/agent-runtime/src/modules/runtime-channel/manifest.ts:105-164 @b62d21c`,
+  `packages/agent-runtime/src/modules/runtime-channel/compose.ts:106-115 @b62d21c`).
+  This adds the **harness-config** driver — a one-shot write of per-agent
+  model/mode/config into the harness's own config file, with a catalog advertised
+  on `hello`, a live current-config read, and optional OpenAI-style model discovery
+  (`packages/agent-runtime/src/modules/runtime-channel/drivers/harness-config-plugin.ts:26-34,48-102 @b62d21c`,
+  `packages/agent-runtime/src/modules/runtime-channel/infrastructure/model-discovery.ts:20-64 @b62d21c`).
   See [connections](../concepts/connections-and-contributions.md).
 - **In-pod tRPC** — a scoped router (via the api-server tRPC proxy) for file
   operations and skill install/uninstall/scan/publish/listLocal.

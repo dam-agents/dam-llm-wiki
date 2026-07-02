@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: b68af4ad0a0c427c856b0e5ba245feb8c2085a72
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/architecture/agent-lifecycle.md, packages/controller/pkg/reconciler/resources.go, packages/controller/pkg/reconciler/hibernation.go, packages/controller/pkg/reconciler/idlechecker.go, packages/controller/api/v1/agent_types.go, packages/api-server/src/modules/agents/domain/spec-assembly.ts, packages/api-server/src/modules/agents/infrastructure/agent-mappers.ts, packages/api-server/src/modules/runtime-delivery/services/state-builder.ts]
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Agent lifecycle
@@ -37,9 +37,13 @@ running-vs-hibernated is observed status the controller derives from activity.
   the controller-published `Ready` condition is the authoritative "can I call
   this pod?". It pokes the `last-activity` annotation (the reconciler scales up
   recently-active agents), single-flights concurrent waits, and bumps activity
-  on every successful call. Three wake paths: connect-driven (ACP frame, UI tab
-  or channel inbound), schedule-driven (trigger event + poke, no wait), and
-  skills-management-driven. Bounded wakes give up after two minutes.
+  on every successful call. Wake paths: connect-driven (ACP frame, UI tab
+  or channel inbound), schedule-driven (trigger event + poke, no wait),
+  skills-management-driven, and experiment-driven — starting an
+  [Experiment](experiments.md) commits an `experiment-trigger` event that pokes
+  each Arm's Agent awake the same way and opens the Arm's Trial session on delivery
+  (`docs/architecture/agent-lifecycle.md @b62d21c`). Bounded wakes give up after
+  two minutes.
 - **Trigger fire** — [Schedules](../entities/schedule.md) are Postgres rows armed
   as delayed Redis jobs; the next occurrence is computed from cron/RRULE in the
   schedule's timezone, skipping enabled quiet-hours windows (suppressed, not

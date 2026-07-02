@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d507c05fb3683c901473b5166766db03ce14fb29
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [packages/agent-runtime-api/src/modules/skills/source-roots.ts, packages/agent-runtime-api/src/modules/runtime/types.ts, packages/agent-runtime/src/modules/skills/infrastructure/local-skill-repository.ts, packages/agent-runtime/src/modules/skills/services/scan.ts, packages/api-server/src/modules/skills/infrastructure/public-archive-scanner.ts, packages/db/src/schema.ts, docs/architecture/skills.md]
-updated: 2026-06-26
+updated: 2026-07-02
 ---
 
 # Skill resolution — which folders DAM scans for skills

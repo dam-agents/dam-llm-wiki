@@ -1,8 +1,8 @@
 ---
 source: dam-agents/dam
-commit: d34c21a008d3b868fc260838374836ac88fb0807
+commit: b62d21c288162847d7d9918ca7887265448fe2b3
 files: [docs/ubiquitous-language.md, docs/architecture/security-and-credentials.md]
-updated: 2026-06-24
+updated: 2026-07-02
 ---
 
 # HITL approvals & egress rules
